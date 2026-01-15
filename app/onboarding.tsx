@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,18 @@ import {
   SafeAreaView,
   ScrollView,
   Animated,
+  TextInput,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import Slider from '@react-native-community/slider';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { CareerGoal } from '@/types';
-import { updateCareerGoal } from '@/utils/storage';
+import { CareerGoal, TransitionTimeline } from '@/types';
+import { completeOnboarding } from '@/utils/storage';
+
+const { width } = Dimensions.get('window');
 
 const careerGoals: CareerGoal[] = [
   'Switching to Tech',
@@ -21,98 +28,327 @@ const careerGoals: CareerGoal[] = [
   'Skill Development',
 ];
 
+const timelines: { value: TransitionTimeline; label: string }[] = [
+  { value: '1-3m', label: '1-3 months' },
+  { value: '3-6m', label: '3-6 months' },
+  { value: '6-12m', label: '6-12 months' },
+  { value: '12m+', label: '12+ months' },
+];
+
 export default function OnboardingScreen() {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Form data
+  const [name, setName] = useState('');
   const [selectedGoal, setSelectedGoal] = useState<CareerGoal | null>(null);
-  const [scaleAnim] = useState(new Animated.Value(1));
+  const [currentRole, setCurrentRole] = useState('');
+  const [yearsExperience, setYearsExperience] = useState(2);
+  const [selectedTimeline, setSelectedTimeline] = useState<TransitionTimeline>('3-6m');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
-  const handleGoalSelect = (goal: CareerGoal) => {
-    setSelectedGoal(goal);
+  const totalSteps = 4;
 
-    // Animate button press
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
+  const handleNext = () => {
+    if (currentStep < totalSteps - 1) {
+      Animated.timing(scrollX, {
+        toValue: -(currentStep + 1) * width,
+        duration: 300,
         useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const handleContinue = async () => {
-    if (selectedGoal) {
-      await updateCareerGoal(selectedGoal);
-      router.replace('/(tabs)');
+      }).start();
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleComplete();
     }
   };
 
+  const handleBack = () => {
+    if (currentStep > 0) {
+      Animated.timing(scrollX, {
+        toValue: -(currentStep - 1) * width,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (!name || !selectedGoal || !currentRole) return;
+
+    setIsLoading(true);
+    // Simulate plan preparation
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    await completeOnboarding(
+      name,
+      selectedGoal,
+      currentRole,
+      yearsExperience,
+      selectedTimeline
+    );
+
+    setIsLoading(false);
+    setShowWelcome(true);
+
+    // Navigate to main app after showing welcome
+    setTimeout(() => {
+      router.replace('/(tabs)');
+    }, 3000);
+  };
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0:
+        return selectedGoal !== null;
+      case 1:
+        return name.trim().length > 0;
+      case 2:
+        return currentRole.trim().length > 0;
+      case 3:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingTitle}>Preparing Your Plan...</Text>
+          <Text style={styles.loadingSubtitle}>
+            Creating your personalized 30-day career transition roadmap
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (showWelcome) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.welcomeContainer}>
+          <View style={styles.welcomeIconContainer}>
+            <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
+          </View>
+          <Text style={styles.welcomeTitle}>Welcome, {name}! 🎉</Text>
+          <Text style={styles.welcomeSubtitle}>
+            Your 30-day career transition plan from{' '}
+            <Text style={styles.welcomeHighlight}>{currentRole}</Text> to{' '}
+            <Text style={styles.welcomeHighlight}>{selectedGoal}</Text> is ready!
+          </Text>
+          <Text style={styles.welcomeNote}>Let&apos;s begin your journey...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Welcome to Careerguide</Text>
-          <Text style={styles.subtitle}>
-            Your AI-powered career transition coach
-          </Text>
-
-          <View style={styles.questionContainer}>
-            <Text style={styles.question}>What&apos;s your primary career goal?</Text>
-            <Text style={styles.hint}>Select one to get started</Text>
-          </View>
-
-          <View style={styles.goalsContainer}>
-            {careerGoals.map((goal) => (
-              <TouchableOpacity
-                key={goal}
-                style={[
-                  styles.goalCard,
-                  selectedGoal === goal && styles.goalCardSelected,
-                ]}
-                onPress={() => handleGoalSelect(goal)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.goalCardContent}>
-                  <View
-                    style={[
-                      styles.radioButton,
-                      selectedGoal === goal && styles.radioButtonSelected,
-                    ]}
-                  >
-                    {selectedGoal === goal && (
-                      <View style={styles.radioButtonInner} />
-                    )}
-                  </View>
-                  <Text
-                    style={[
-                      styles.goalText,
-                      selectedGoal === goal && styles.goalTextSelected,
-                    ]}
-                  >
-                    {goal}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {selectedGoal && (
-            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-              <TouchableOpacity
-                style={styles.continueButton}
-                onPress={handleContinue}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.continueButtonText}>Continue</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
+      {/* Progress Bar */}
+      <View style={styles.progressBarContainer}>
+        <View style={styles.progressBar}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${((currentStep + 1) / totalSteps) * 100}%` },
+            ]}
+          />
         </View>
-      </ScrollView>
+        <Text style={styles.progressText}>
+          Step {currentStep + 1} of {totalSteps}
+        </Text>
+      </View>
+
+      {/* Content */}
+      <Animated.View
+        style={[
+          styles.contentContainer,
+          { transform: [{ translateX: scrollX }] },
+        ]}
+      >
+        {/* Step 1: Career Goal */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView contentContainerStyle={styles.stepScroll}>
+            <Text style={styles.title}>What&apos;s your primary career goal?</Text>
+            <Text style={styles.subtitle}>Select one to get started</Text>
+
+            <View style={styles.optionsContainer}>
+              {careerGoals.map((goal) => (
+                <TouchableOpacity
+                  key={goal}
+                  style={[
+                    styles.optionCard,
+                    selectedGoal === goal && styles.optionCardSelected,
+                  ]}
+                  onPress={() => setSelectedGoal(goal)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.optionContent}>
+                    <View
+                      style={[
+                        styles.radioButton,
+                        selectedGoal === goal && styles.radioButtonSelected,
+                      ]}
+                    >
+                      {selectedGoal === goal && (
+                        <View style={styles.radioButtonInner} />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedGoal === goal && styles.optionTextSelected,
+                      ]}
+                    >
+                      {goal}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Step 2: Name */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView contentContainerStyle={styles.stepScroll}>
+            <Text style={styles.title}>What&apos;s your name?</Text>
+            <Text style={styles.subtitle}>
+              Let&apos;s personalize your experience
+            </Text>
+
+            <View style={styles.inputCard}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your first name"
+                placeholderTextColor={Colors.mediumGray}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoFocus
+              />
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Step 3: Current Role & Experience */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView contentContainerStyle={styles.stepScroll}>
+            <Text style={styles.title}>Tell us about your background</Text>
+            <Text style={styles.subtitle}>This helps us personalize your advice</Text>
+
+            <View style={styles.inputCard}>
+              <Text style={styles.label}>What&apos;s your current role?</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Marketing Manager"
+                placeholderTextColor={Colors.mediumGray}
+                value={currentRole}
+                onChangeText={setCurrentRole}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <View style={styles.sliderCard}>
+              <Text style={styles.label}>Years of experience?</Text>
+              <View style={styles.sliderValueContainer}>
+                <Text style={styles.sliderValue}>{yearsExperience} years</Text>
+              </View>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={20}
+                step={1}
+                value={yearsExperience}
+                onValueChange={setYearsExperience}
+                minimumTrackTintColor={Colors.primary}
+                maximumTrackTintColor={Colors.lightGray}
+                thumbTintColor={Colors.primary}
+              />
+              <View style={styles.sliderLabels}>
+                <Text style={styles.sliderLabelText}>0</Text>
+                <Text style={styles.sliderLabelText}>20+</Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Step 4: Timeline */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView contentContainerStyle={styles.stepScroll}>
+            <Text style={styles.title}>What&apos;s your transition timeline?</Text>
+            <Text style={styles.subtitle}>
+              How soon are you looking to make this change?
+            </Text>
+
+            <View style={styles.optionsContainer}>
+              {timelines.map((timeline) => (
+                <TouchableOpacity
+                  key={timeline.value}
+                  style={[
+                    styles.optionCard,
+                    selectedTimeline === timeline.value && styles.optionCardSelected,
+                  ]}
+                  onPress={() => setSelectedTimeline(timeline.value)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.optionContent}>
+                    <View
+                      style={[
+                        styles.radioButton,
+                        selectedTimeline === timeline.value &&
+                          styles.radioButtonSelected,
+                      ]}
+                    >
+                      {selectedTimeline === timeline.value && (
+                        <View style={styles.radioButtonInner} />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedTimeline === timeline.value &&
+                          styles.optionTextSelected,
+                      ]}
+                    >
+                      {timeline.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </Animated.View>
+
+      {/* Navigation Buttons */}
+      <View style={styles.navigationContainer}>
+        {currentStep > 0 && (
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            !canProceed() && styles.nextButtonDisabled,
+            currentStep === 0 && styles.nextButtonFull,
+          ]}
+          onPress={handleNext}
+          disabled={!canProceed()}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -122,16 +358,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  scrollContent: {
-    flexGrow: 1,
+  progressBarContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
   },
-  content: {
+  progressBar: {
+    height: 4,
+    backgroundColor: Colors.lightGray,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+  },
+  progressText: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    textAlign: 'center',
+  },
+  contentContainer: {
     flex: 1,
-    padding: 24,
-    paddingTop: 60,
+    flexDirection: 'row',
+  },
+  step: {
+    paddingHorizontal: 24,
+  },
+  stepScroll: {
+    paddingBottom: 120,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.navy,
     marginBottom: 8,
@@ -139,26 +398,12 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: Colors.mediumGray,
-    marginBottom: 48,
-  },
-  questionContainer: {
-    marginBottom: 24,
-  },
-  question: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.navy,
-    marginBottom: 8,
-  },
-  hint: {
-    fontSize: 14,
-    color: Colors.mediumGray,
-  },
-  goalsContainer: {
-    gap: 12,
     marginBottom: 32,
   },
-  goalCard: {
+  optionsContainer: {
+    gap: 12,
+  },
+  optionCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 20,
@@ -170,11 +415,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  goalCardSelected: {
+  optionCardSelected: {
     borderColor: Colors.primary,
     backgroundColor: '#F0F7FF',
   },
-  goalCardContent: {
+  optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -197,20 +442,101 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: Colors.primary,
   },
-  goalText: {
+  optionText: {
     fontSize: 16,
     fontWeight: '500',
     color: Colors.navy,
     flex: 1,
   },
-  goalTextSelected: {
+  optionTextSelected: {
     color: Colors.primary,
     fontWeight: '600',
   },
-  continueButton: {
-    backgroundColor: Colors.primary,
+  inputCard: {
+    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.navy,
+    marginBottom: 12,
+  },
+  input: {
+    fontSize: 16,
+    color: Colors.navy,
+  },
+  sliderCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sliderValueContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sliderValue: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  sliderLabelText: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+  },
+  navigationContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    padding: 24,
+    paddingBottom: 40,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGray,
+  },
+  backButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  nextButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
@@ -218,9 +544,68 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  continueButtonText: {
+  nextButtonFull: {
+    flex: 1,
+    marginLeft: 0,
+  },
+  nextButtonDisabled: {
+    backgroundColor: Colors.lightGray,
+    shadowOpacity: 0,
+  },
+  nextButtonText: {
     color: Colors.white,
     fontSize: 18,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  loadingTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  loadingSubtitle: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  welcomeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  welcomeIconContainer: {
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: Colors.navy,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  welcomeHighlight: {
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  welcomeNote: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    fontStyle: 'italic',
   },
 });

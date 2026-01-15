@@ -49,12 +49,25 @@ export default function CoachingScreen() {
 
     try {
       const profile = await getUserProfile();
-      const prompt = `You are an expert career coach. A professional who wants to ${profile.careerGoal} is facing this challenge: "${challenge}".
 
-Provide 3-5 specific, actionable steps they can take this week to overcome this challenge. Each step should be:
-- Concrete and immediately actionable
-- Time-bound (specify when to do it)
-- Result-oriented (what they'll achieve)
+      // Build hyper-personalized prompt
+      const experienceContext = profile.yearsExperience > 0
+        ? `with ${profile.yearsExperience} years of experience`
+        : 'starting their career';
+
+      const roleContext = profile.currentRole
+        ? `currently working as a ${profile.currentRole}`
+        : 'a professional';
+
+      const prompt = `You are an expert career coach. Help ${roleContext} ${experienceContext} who wants to ${profile.careerGoal}.
+
+They are facing this challenge: "${challenge}"
+
+Based on their background as a ${profile.currentRole || 'professional'}, provide 3-5 specific, actionable steps they can take this week. Focus on:
+- Leveraging their existing skills and experience
+- Concrete actions they can start immediately
+- Time-bound activities (specify when to do it)
+- Clear outcomes they'll achieve
 
 Format your response as a numbered list with clear, concise bullet points. Each step should be one sentence. Do not include any introductory text, just the numbered action steps.`;
 

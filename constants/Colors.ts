@@ -1,3 +1,4 @@
+// Light Theme (Default)
 export const Colors = {
   primary: '#4A90E2', // Professional Sky Blue
   success: '#7ED8B4', // Soft Mint Green
@@ -9,7 +10,28 @@ export const Colors = {
   cardBackground: '#FFFFFF',
   shadow: '#000000',
   error: '#E74C3C',
+  warning: '#FFA726',
+  info: '#29B6F6',
 };
+
+// Dark Theme
+export const DarkColors = {
+  primary: '#4A90E2', // Professional Sky Blue (same)
+  success: '#7ED8B4', // Soft Mint Green (same)
+  background: '#121820', // Dark Background
+  navy: '#FFFFFF', // White text for dark mode
+  white: '#1A2332', // Dark cards
+  lightGray: '#2A3442',
+  mediumGray: '#9BA3AF',
+  cardBackground: '#1E2936',
+  shadow: '#000000',
+  error: '#E74C3C',
+  warning: '#FFA726',
+  info: '#29B6F6',
+};
+
+// Helper function to get theme colors
+export const getThemeColors = (isDark: boolean) => (isDark ? DarkColors : Colors);
 
 export const motivationalQuotes = [
   {
