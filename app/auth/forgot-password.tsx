@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
+import Toast from '@/components/Toast';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -27,16 +28,27 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('error');
 
   const shakeAnimation = useRef(new Animated.Value(0)).current;
 
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
   const handleResetPassword = async () => {
     if (!email) {
+      showToast('Please enter your email address', 'error');
       triggerErrorShake('Please enter your email address');
       return;
     }
 
     if (!validateEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
       triggerErrorShake('Please enter a valid email address');
       return;
     }
@@ -48,10 +60,12 @@ export default function ForgotPasswordScreen() {
 
     if (resetError) {
       setLoading(false);
+      showToast(resetError.message || 'Failed to send reset email', 'error');
       triggerErrorShake(resetError.message || 'Failed to send reset email');
     } else {
       setLoading(false);
       setSuccess(true);
+      showToast('Password reset email sent!', 'success');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   };
@@ -92,6 +106,12 @@ export default function ForgotPasswordScreen() {
   if (success) {
     return (
       <SafeAreaView style={styles.container}>
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          visible={toastVisible}
+          onHide={() => setToastVisible(false)}
+        />
         <View style={styles.successContainer}>
           <LinearGradient
             colors={['#4A90E2', '#7ED8B4']}
@@ -127,6 +147,12 @@ export default function ForgotPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
+import Toast from '@/components/Toast';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -31,27 +32,40 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('error');
 
   const shakeAnimation = useRef(new Animated.Value(0)).current;
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   const handleSignup = async () => {
     // Validation
     if (!email || !password || !confirmPassword) {
+      showToast('Please fill in all fields', 'error');
       triggerErrorShake('Please fill in all fields');
       return;
     }
 
     if (!validateEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
       triggerErrorShake('Please enter a valid email address');
       return;
     }
 
     if (password.length < 6) {
+      showToast('Password must be at least 6 characters', 'error');
       triggerErrorShake('Password must be at least 6 characters');
       return;
     }
 
     if (password !== confirmPassword) {
+      showToast('Passwords do not match', 'error');
       triggerErrorShake('Passwords do not match');
       return;
     }
@@ -63,10 +77,15 @@ export default function SignupScreen() {
 
     if (authError) {
       setLoading(false);
-      triggerErrorShake(authError.message || 'Failed to create account');
+      const errorMsg = authError.message.includes('already registered')
+        ? 'This email is already registered'
+        : authError.message;
+      showToast(errorMsg, 'error');
+      triggerErrorShake(errorMsg);
     } else {
       setLoading(false);
       setSuccess(true);
+      showToast('Account created! Setting up your profile...', 'success');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       // Show success message for 2 seconds, then redirect to onboarding
@@ -112,6 +131,12 @@ export default function SignupScreen() {
   if (success) {
     return (
       <SafeAreaView style={styles.container}>
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          visible={toastVisible}
+          onHide={() => setToastVisible(false)}
+        />
         <View style={styles.successContainer}>
           <LinearGradient
             colors={['#4A90E2', '#7ED8B4']}
@@ -132,6 +157,12 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

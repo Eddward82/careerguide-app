@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
+import Toast from '@/components/Toast';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -28,16 +29,27 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('error');
 
   const shakeAnimation = useRef(new Animated.Value(0)).current;
 
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
+      showToast('Please fill in all fields', 'error');
       triggerErrorShake('Please fill in all fields');
       return;
     }
 
     if (!validateEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
       triggerErrorShake('Please enter a valid email address');
       return;
     }
@@ -49,12 +61,19 @@ export default function LoginScreen() {
 
     if (authError) {
       setLoading(false);
-      triggerErrorShake(authError.message || 'Invalid email or password');
+      const errorMsg = authError.message.includes('Invalid login')
+        ? 'Invalid email or password'
+        : authError.message;
+      showToast(errorMsg, 'error');
+      triggerErrorShake(errorMsg);
     } else {
       setLoading(false);
+      showToast('Welcome back! Redirecting...', 'success');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Auth context will handle navigation
-      router.replace('/(tabs)');
+      // Small delay to show success toast
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 1000);
     }
   };
 
@@ -93,6 +112,12 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Toast
+        message={toastMessage}
+        type={toastType}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
