@@ -1,4 +1,4 @@
--- Careerguide App Database Schema
+-- Careerguide App Database Schema (CORRECTED)
 -- Run this in your Supabase SQL Editor to set up the database
 
 -- ============================================
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS coaching_sessions (
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   date TIMESTAMPTZ NOT NULL,
   challenge TEXT NOT NULL,
-  action_plan JSONB NOT NULL, -- Array of action steps
+  action_plan JSONB NOT NULL,
   progress_log TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -74,7 +74,7 @@ CREATE POLICY "Users can delete own sessions"
 CREATE TABLE IF NOT EXISTS badges (
   id TEXT PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) NOT NULL,
-  badge_type TEXT NOT NULL, -- 'firstSession', 'weekStreak', 'monthStreak', etc.
+  badge_type TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   icon TEXT NOT NULL,
@@ -146,9 +146,10 @@ CREATE TRIGGER update_profiles_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
--- NOTES:
+-- SUCCESS MESSAGE
 -- ============================================
--- 1. Run this entire script in your Supabase SQL Editor
--- 2. Make sure to enable email/password authentication in Supabase Auth settings
--- 3. Disable email confirmation for development (optional)
--- 4. The avatar storage bucket will be created automatically
+-- If you see this message, the schema was created successfully!
+-- Next steps:
+-- 1. Enable email/password authentication in Supabase Auth settings
+-- 2. (Optional) Disable email confirmation for development
+-- 3. Test your app with signup/login
