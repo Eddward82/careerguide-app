@@ -14,16 +14,24 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { getAllSessions, getUserProfile } from '@/utils/storage';
-import { CoachingSession } from '@/types';
+import { CoachingSession, UserProfile } from '@/types';
+import ShareJourneyCard from '@/components/ShareJourneyCard';
 
 export default function HistoryScreen() {
   const router = useRouter();
   const [sessions, setSessions] = useState<CoachingSession[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadSessions();
+    loadProfile();
   }, []);
+
+  const loadProfile = async () => {
+    const userProfile = await getUserProfile();
+    setProfile(userProfile);
+  };
 
   const loadSessions = async () => {
     setRefreshing(true);
@@ -115,6 +123,18 @@ export default function HistoryScreen() {
           </View>
         }
       >
+        {/* Share Journey Card - Only show when user has progress */}
+        {profile && sessions.length > 0 && (
+          <View style={styles.shareSection}>
+            <ShareJourneyCard
+              name={profile.name}
+              streak={profile.currentStreak}
+              targetGoal={profile.careerGoal}
+              sessionsCount={sessions.length}
+            />
+          </View>
+        )}
+
         {sessions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="time-outline" size={64} color={Colors.lightGray} />
@@ -238,6 +258,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 24,
     paddingBottom: 40,
+  },
+  shareSection: {
+    marginBottom: 24,
   },
   emptyContainer: {
     alignItems: 'center',

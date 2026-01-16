@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 import { getUserProfile, clearAllData } from '@/utils/storage';
 import { UserProfile } from '@/types';
+import ShareJourneyCard from '@/components/ShareJourneyCard';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -239,6 +240,16 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Share Journey Card */}
+        <View style={styles.shareSection}>
+          <ShareJourneyCard
+            name={profile.name}
+            streak={profile.currentStreak}
+            targetGoal={profile.careerGoal}
+            sessionsCount={profile.sessions.length}
+          />
+        </View>
+
         {/* Career Goal */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Career Goal</Text>
@@ -390,6 +401,10 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     backgroundColor: Colors.lightGray,
+  },
+  shareSection: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
   section: {
     paddingHorizontal: 24,
