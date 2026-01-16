@@ -49,7 +49,9 @@
     },
     "extra": {
       "EXPO_PUBLIC_NEWELL_API_URL": "https://newell.fastshot.ai",
-      "EXPO_PUBLIC_PROJECT_ID": "1e5802f9-dfa7-4172-b2b4-55f412ea21b3"
+      "EXPO_PUBLIC_PROJECT_ID": "1e5802f9-dfa7-4172-b2b4-55f412ea21b3",
+      "EXPO_PUBLIC_SUPABASE_URL": "https://ujoisztokddchjbizvcu.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqb2lzenRva2RkY2hqYml6dmN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzU2NDcsImV4cCI6MjA4NDE1MTY0N30.kgrsC4JL6970SsdC0uL5Sq6s6T9touVxX1YZY1zIRZI"
     }
   }
 }
