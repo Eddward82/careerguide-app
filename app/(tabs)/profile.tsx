@@ -30,24 +30,43 @@ export default function ProfileScreen() {
 
   const handleResetData = () => {
     Alert.alert(
-      'Reset All Data',
-      'Are you sure you want to delete all your coaching sessions and progress? This cannot be undone.',
+      '⚠️ Reset to First Launch',
+      'This will permanently delete:\n\n• Personal profile & preferences\n• All coaching sessions & chat history\n• Generated action plans\n• Progress logs & streak counter\n• Unlocked badges & achievements\n• Weekly challenge progress\n\nYou will return to the welcome screen as a brand new user.\n\nThis action cannot be undone.',
       [
         {
           text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Reset',
+          text: 'Reset Everything',
           style: 'destructive',
           onPress: async () => {
-            await clearAllData();
-            Alert.alert('Data Reset', 'All your data has been cleared.', [
-              {
-                text: 'OK',
-                onPress: () => router.replace('/onboarding'),
-              },
-            ]);
+            try {
+              // Clear all AsyncStorage data
+              await clearAllData();
+
+              // Show success message and redirect to index (which will route to onboarding)
+              Alert.alert(
+                '✓ Reset Complete',
+                'All data has been cleared. Welcome back!',
+                [
+                  {
+                    text: 'Start Fresh',
+                    onPress: () => {
+                      // Navigate to root index which will detect no onboarding and redirect
+                      router.replace('/');
+                    },
+                  },
+                ]
+              );
+            } catch (err) {
+              console.error('Error resetting data:', err);
+              Alert.alert(
+                'Reset Failed',
+                'There was an error resetting your data. Please try again.',
+                [{ text: 'OK' }]
+              );
+            }
           },
         },
       ]
@@ -155,14 +174,24 @@ export default function ProfileScreen() {
 
         {/* Danger Zone */}
         <View style={styles.section}>
-          <TouchableOpacity
-            style={styles.dangerButton}
-            onPress={handleResetData}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="trash" size={20} color={Colors.error} />
-            <Text style={styles.dangerButtonText}>Reset All Data</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Developer Options</Text>
+          <View style={styles.dangerZone}>
+            <View style={styles.dangerZoneHeader}>
+              <Ionicons name="warning" size={20} color={Colors.error} />
+              <Text style={styles.dangerZoneTitle}>Testing Tools</Text>
+            </View>
+            <Text style={styles.dangerZoneDescription}>
+              Reset the app to test the complete onboarding experience from scratch
+            </Text>
+            <TouchableOpacity
+              style={styles.dangerButton}
+              onPress={handleResetData}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="refresh" size={20} color={Colors.error} />
+              <Text style={styles.dangerButtonText}>Reset to First Launch</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.footerNote}>
@@ -317,19 +346,43 @@ const styles = StyleSheet.create({
     color: Colors.navy,
     marginLeft: 12,
   },
-  dangerButton: {
-    backgroundColor: Colors.white,
+  dangerZone: {
+    backgroundColor: '#FFF5F5',
     borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+  },
+  dangerZoneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dangerZoneTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.error,
+    marginLeft: 8,
+  },
+  dangerZoneDescription: {
+    fontSize: 13,
+    color: Colors.mediumGray,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  dangerButton: {
+    backgroundColor: Colors.white,
+    borderRadius: 8,
+    padding: 14,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.error,
   },
   dangerButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.error,
     marginLeft: 8,
   },
