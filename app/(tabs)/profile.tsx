@@ -19,6 +19,7 @@ import { UserProfile } from '@/types';
 export default function ProfileScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -27,6 +28,42 @@ export default function ProfileScreen() {
   const loadProfile = async () => {
     const userProfile = await getUserProfile();
     setProfile(userProfile);
+  };
+
+  // DIRECT RESET - NO ALERT
+  const handleDirectReset = async () => {
+    console.log('');
+    console.log('═══════════════════════════════════════');
+    console.log('🔥 DIRECT RESET BUTTON PRESSED!');
+    console.log('═══════════════════════════════════════');
+
+    setIsResetting(true);
+
+    try {
+      console.log('📦 Checking storage...');
+      const keysBefore = await AsyncStorage.getAllKeys();
+      console.log(`   Found ${keysBefore.length} keys`);
+
+      console.log('🗑️  Clearing storage...');
+      await clearAllData();
+
+      console.log('🔍 Verifying clear...');
+      const keysAfter = await AsyncStorage.getAllKeys();
+      console.log(`   Remaining: ${keysAfter.length}`);
+
+      console.log('🔄 Resetting state...');
+      setProfile(null);
+
+      console.log('🚀 Navigating to onboarding...');
+      router.replace('/onboarding');
+
+      console.log('✅ RESET COMPLETE!');
+      console.log('═══════════════════════════════════════');
+      console.log('');
+    } catch (err) {
+      console.error('❌ RESET FAILED:', err);
+      setIsResetting(false);
+    }
   };
 
   const handleResetData = () => {
@@ -140,16 +177,43 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
 
-          {/* Quick Reset Test Button */}
+          {/* DIRECT Reset Button - NO CONFIRMATION */}
           <TouchableOpacity
-            style={styles.quickResetTest}
-            onPress={() => {
-              console.log('🎯 QUICK RESET TEST BUTTON PRESSED!');
-              handleResetData();
-            }}
+            style={[
+              styles.quickResetTest,
+              isResetting && styles.quickResetTestActive,
+            ]}
+            onPress={handleDirectReset}
+            disabled={isResetting}
             activeOpacity={0.7}
           >
-            <Text style={styles.quickResetTestText}>🔄 TAP TO RESET</Text>
+            <Text style={styles.quickResetTestText}>
+              {isResetting ? '⏳ RESETTING...' : '🔥 RESET NOW (NO CONFIRM)'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Alert-based Reset Button */}
+          <TouchableOpacity
+            style={styles.alertResetTest}
+            onPress={handleResetData}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.alertResetTestText}>⚠️ RESET (With Alert)</Text>
+          </TouchableOpacity>
+
+          {/* Touch Test Button */}
+          <TouchableOpacity
+            style={styles.touchTest}
+            onPress={() => {
+              console.log('');
+              console.log('════════════════════════════════════════════');
+              console.log('✅ TOUCH TEST: Button is receiving touches!');
+              console.log('════════════════════════════════════════════');
+              console.log('');
+            }}
+            activeOpacity={0.5}
+          >
+            <Text style={styles.touchTestText}>👆 TOUCH TEST</Text>
           </TouchableOpacity>
         </View>
 
@@ -464,16 +528,55 @@ const styles = StyleSheet.create({
     color: Colors.mediumGray,
   },
   quickResetTest: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#FF3B3B',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
     marginTop: 12,
     alignSelf: 'center',
+    borderWidth: 3,
+    borderColor: '#000',
+  },
+  quickResetTestActive: {
+    backgroundColor: '#FFA500',
+    borderColor: '#FF8C00',
   },
   quickResetTestText: {
     color: Colors.white,
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+  alertResetTest: {
+    backgroundColor: '#444',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'center',
+    borderWidth: 2,
+    borderColor: '#666',
+  },
+  alertResetTestText: {
+    color: Colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  touchTest: {
+    backgroundColor: '#00AA00',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'center',
+    borderWidth: 2,
+    borderColor: '#00FF00',
+  },
+  touchTestText: {
+    color: Colors.white,
+    fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
   },
