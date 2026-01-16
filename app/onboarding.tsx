@@ -220,7 +220,10 @@ export default function OnboardingScreen() {
                     styles.optionCard,
                     selectedGoal === goal && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedGoal(goal)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedGoal(goal);
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionContent}>
@@ -430,7 +433,11 @@ export default function OnboardingScreen() {
 
         {/* Step 4: Timeline */}
         <View style={[styles.step, { width }]}>
-          <ScrollView contentContainerStyle={styles.stepScroll}>
+          <ScrollView
+            contentContainerStyle={styles.stepScrollInline}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.title}>What&apos;s your transition timeline?</Text>
             <Text style={styles.subtitle}>
               How soon are you looking to make this change?
@@ -444,7 +451,10 @@ export default function OnboardingScreen() {
                     styles.optionCard,
                     selectedTimeline === timeline.value && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedTimeline(timeline.value)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedTimeline(timeline.value);
+                  }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionContent}>
@@ -472,12 +482,52 @@ export default function OnboardingScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Visual confirmation of selection */}
+            {selectedTimeline && (
+              <Text style={styles.selectionConfirm}>
+                ✓ {timelines.find(t => t.value === selectedTimeline)?.label} selected
+              </Text>
+            )}
+
+            {/* INLINE NAVIGATION BUTTONS - ALWAYS VISIBLE */}
+            <View style={styles.inlineButtonContainer}>
+              <TouchableOpacity
+                style={styles.inlineBackButton}
+                onPress={handleBack}
+              >
+                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+              </TouchableOpacity>
+
+              <Animated.View
+                style={[
+                  styles.inlineNextButtonContainer,
+                  { transform: [{ scale: buttonScale }] },
+                ]}
+              >
+                <TouchableOpacity
+                  style={styles.inlineNextButton}
+                  onPress={handleNext}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.nextButtonText}>
+                    Create My Plan
+                  </Text>
+                  <Ionicons
+                    name="rocket"
+                    size={20}
+                    color={Colors.white}
+                    style={styles.buttonIcon}
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
           </ScrollView>
         </View>
         </Animated.View>
 
-        {/* Navigation Buttons - Only show for steps 0 and 3 (steps without inline buttons) */}
-        {(currentStep === 0 || currentStep === 3) && (
+        {/* Navigation Buttons - Only show for step 0 (Career Goal - only step without inline buttons) */}
+        {currentStep === 0 && (
           <View
             style={[
               styles.navigationContainer,
@@ -673,6 +723,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     fontStyle: 'italic',
+  },
+  selectionConfirm: {
+    fontSize: 14,
+    color: Colors.success,
+    textAlign: 'center',
+    marginTop: 16,
+    fontWeight: '600',
   },
   sliderCard: {
     backgroundColor: Colors.white,
