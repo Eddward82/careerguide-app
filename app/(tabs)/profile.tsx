@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 import { getUserProfile, clearAllData } from '@/utils/storage';
 import { UserProfile } from '@/types';
@@ -29,37 +30,90 @@ export default function ProfileScreen() {
   };
 
   const handleResetData = () => {
+    console.log('');
+    console.log('═══════════════════════════════════════');
+    console.log('🔘 RESET BUTTON PRESSED');
+    console.log('═══════════════════════════════════════');
+
     Alert.alert(
       '⚠️ Reset to First Launch',
-      'This will permanently delete:\n\n• Personal profile & preferences\n• All coaching sessions & chat history\n• Generated action plans\n• Progress logs & streak counter\n• Unlocked badges & achievements\n• Weekly challenge progress\n\nYou will return to the welcome screen as a brand new user.\n\nThis action cannot be undone.',
+      'This will clear ALL data and restart onboarding.\n\nCannot be undone.',
       [
         {
           text: 'Cancel',
           style: 'cancel',
+          onPress: () => {
+            console.log('❌ User cancelled reset');
+            console.log('═══════════════════════════════════════');
+            console.log('');
+          },
         },
         {
-          text: 'Reset Everything',
+          text: 'RESET NOW',
           style: 'destructive',
           onPress: async () => {
+            console.log('');
+            console.log('═══════════════════════════════════════');
+            console.log('🔄 RESET CONFIRMED - STARTING PROCESS');
+            console.log('═══════════════════════════════════════');
+
             try {
-              console.log('🔄 Starting reset process...');
+              // Step 1: Show what's in storage before clear
+              console.log('');
+              console.log('📦 STEP 1: Checking current storage...');
+              const keysBefore = await AsyncStorage.getAllKeys();
+              console.log(`   Found ${keysBefore.length} keys:`, keysBefore);
 
-              // Clear all AsyncStorage data
+              // Step 2: Clear AsyncStorage
+              console.log('');
+              console.log('🗑️  STEP 2: Clearing AsyncStorage...');
               await clearAllData();
-              console.log('✅ Data cleared successfully');
+              console.log('   ✅ clearAllData() completed');
 
-              // Navigate directly to onboarding
-              console.log('🚀 Navigating to onboarding...');
-              router.replace('/onboarding');
+              // Step 3: Verify it's actually cleared
+              console.log('');
+              console.log('🔍 STEP 3: Verifying storage is empty...');
+              const keysAfter = await AsyncStorage.getAllKeys();
+              console.log(`   Remaining keys: ${keysAfter.length}`);
+              if (keysAfter.length === 0) {
+                console.log('   ✅ STORAGE IS EMPTY');
+              } else {
+                console.log('   ⚠️  WARNING: Still has keys:', keysAfter);
+              }
 
-              // Reset the profile state
+              // Step 4: Reset local state
+              console.log('');
+              console.log('🔄 STEP 4: Resetting local state...');
               setProfile(null);
+              console.log('   ✅ Profile state cleared');
+
+              // Step 5: Navigate to onboarding
+              console.log('');
+              console.log('🚀 STEP 5: Navigating to onboarding...');
+              console.log('   Calling router.replace("/onboarding")');
+              router.replace('/onboarding');
+              console.log('   ✅ Navigation command sent');
+
+              console.log('');
+              console.log('═══════════════════════════════════════');
+              console.log('✅ RESET COMPLETE!');
+              console.log('   → You should now see Step 1: Career Goal');
+              console.log('═══════════════════════════════════════');
+              console.log('');
 
             } catch (err) {
-              console.error('❌ Error resetting data:', err);
+              console.log('');
+              console.log('═══════════════════════════════════════');
+              console.error('❌ RESET FAILED');
+              console.error('Error object:', err);
+              console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
+              console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
+              console.log('═══════════════════════════════════════');
+              console.log('');
+
               Alert.alert(
-                'Reset Failed',
-                'There was an error resetting your data. Please try again.',
+                '❌ Reset Failed',
+                `Error: ${err instanceof Error ? err.message : 'Unknown error'}\n\nCheck the console for details.`,
                 [{ text: 'OK' }]
               );
             }
@@ -85,6 +139,18 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
+
+          {/* Quick Reset Test Button */}
+          <TouchableOpacity
+            style={styles.quickResetTest}
+            onPress={() => {
+              console.log('🎯 QUICK RESET TEST BUTTON PRESSED!');
+              handleResetData();
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.quickResetTestText}>🔄 TAP TO RESET</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Stats Card */}
@@ -396,5 +462,19 @@ const styles = StyleSheet.create({
   footerVersion: {
     fontSize: 10,
     color: Colors.mediumGray,
+  },
+  quickResetTest: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: 'center',
+  },
+  quickResetTestText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
