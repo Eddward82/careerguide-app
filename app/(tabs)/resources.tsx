@@ -13,7 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { resources } from '@/data/mockData';
 import { getUserProfile } from '@/utils/storage';
-import { CareerGoal, Resource } from '@/types';
+import { CareerGoal, Resource, UserProfile } from '@/types';
+import AIRecommendedBadge from '@/components/AIRecommendedBadge';
+import SmartMatchWelcome from '@/components/SmartMatchWelcome';
+import { isFirstResourceVisit, markResourceVisited } from '@/utils/notifications';
 
 const categoryColors = {
   'LinkedIn Articles': '#0077B5',
@@ -28,30 +31,48 @@ const categoryIcons = {
 };
 
 export default function ResourcesScreen() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [careerGoal, setCareerGoal] = useState<CareerGoal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    loadCareerGoal();
+    loadProfileAndCheckFirstVisit();
   }, []);
 
-  const loadCareerGoal = async () => {
-    const profile = await getUserProfile();
-    setCareerGoal(profile.careerGoal);
+  const loadProfileAndCheckFirstVisit = async () => {
+    const userProfile = await getUserProfile();
+    setProfile(userProfile);
+    setCareerGoal(userProfile.careerGoal);
+
+    // Check if this is first visit to Resources
+    const isFirst = await isFirstResourceVisit();
+    setShowWelcome(isFirst);
+  };
+
+  const handleDismissWelcome = async () => {
+    setShowWelcome(false);
+    await markResourceVisited();
   };
 
   const categories = ['all', 'LinkedIn Articles', 'Top Courses', 'Networking Groups'];
 
-  const filteredResources = resources.filter((resource) => {
-    if (selectedCategory === 'all') {
-      // Show relevant resources first
-      if (careerGoal && resource.relevantTo.includes(careerGoal)) {
+  const filteredResources = resources
+    .filter((resource) => {
+      if (selectedCategory === 'all') {
         return true;
       }
-      return true;
-    }
-    return resource.category === selectedCategory;
-  });
+      return resource.category === selectedCategory;
+    })
+    .sort((a, b) => {
+      // Sort AI-recommended resources to the top
+      const aRecommended = careerGoal && a.relevantTo.includes(careerGoal);
+      const bRecommended = careerGoal && b.relevantTo.includes(careerGoal);
+
+      if (aRecommended && !bRecommended) return -1;
+      if (!aRecommended && bRecommended) return 1;
+      return 0;
+    });
 
   const handleOpenResource = (url: string) => {
     Linking.openURL(url);
@@ -69,6 +90,15 @@ export default function ResourcesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Smart Match Welcome Card */}
+        {showWelcome && profile && (
+          <SmartMatchWelcome
+            currentRole={profile.currentRole}
+            targetGoal={profile.careerGoal}
+            onDismiss={handleDismissWelcome}
+          />
+        )}
+
         {/* Category Filter */}
         <ScrollView
           horizontal
@@ -129,10 +159,7 @@ export default function ResourcesScreen() {
                   <Text style={styles.categoryBadgeText}>{resource.category}</Text>
                 </View>
                 {careerGoal && resource.relevantTo.includes(careerGoal) && (
-                  <View style={styles.relevantBadge}>
-                    <Ionicons name="star" size={12} color={Colors.warning} />
-                    <Text style={styles.relevantBadgeText}>For you</Text>
-                  </View>
+                  <AIRecommendedBadge goal={careerGoal} />
                 )}
               </View>
 
@@ -251,20 +278,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: Colors.white,
-  },
-  relevantBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF8E1',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-  },
-  relevantBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: Colors.warning,
-    marginLeft: 4,
   },
   resourceTitle: {
     fontSize: 15,

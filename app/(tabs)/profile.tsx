@@ -8,6 +8,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,19 +17,85 @@ import { Colors } from '@/constants/Colors';
 import { getUserProfile, clearAllData } from '@/utils/storage';
 import { UserProfile } from '@/types';
 import ShareJourneyCard from '@/components/ShareJourneyCard';
+import * as Haptics from 'expo-haptics';
+import {
+  getWeeklyReminderEnabled,
+  setWeeklyReminderEnabled,
+  getDailyNudgeEnabled,
+  setDailyNudgeEnabled,
+  requestNotificationPermissions,
+} from '@/utils/notifications';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [weeklyReminderEnabled, setWeeklyReminderState] = useState(false);
+  const [dailyNudgeEnabled, setDailyNudgeState] = useState(false);
 
   useEffect(() => {
     loadProfile();
+    loadNotificationSettings();
   }, []);
 
   const loadProfile = async () => {
     const userProfile = await getUserProfile();
     setProfile(userProfile);
+  };
+
+  const loadNotificationSettings = async () => {
+    const weeklyEnabled = await getWeeklyReminderEnabled();
+    const dailyEnabled = await getDailyNudgeEnabled();
+    setWeeklyReminderState(weeklyEnabled);
+    setDailyNudgeState(dailyEnabled);
+  };
+
+  const handleWeeklyReminderToggle = async (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (value) {
+      // Request permissions first
+      const hasPermission = await requestNotificationPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive career reminders.',
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+    }
+
+    setWeeklyReminderState(value);
+    await setWeeklyReminderEnabled(value);
+
+    if (value) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
+
+  const handleDailyNudgeToggle = async (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (value) {
+      // Request permissions first
+      const hasPermission = await requestNotificationPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive daily reminders.',
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+    }
+
+    setDailyNudgeState(value);
+    await setDailyNudgeEnabled(value);
+
+    if (value) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   };
 
   // DIRECT RESET - NO ALERT
@@ -248,6 +315,53 @@ export default function ProfileScreen() {
             targetGoal={profile.careerGoal}
             sessionsCount={profile.sessions.length}
           />
+        </View>
+
+        {/* Notification Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notification Settings</Text>
+
+          <View style={styles.notificationCard}>
+            <View style={styles.notificationItem}>
+              <View style={styles.notificationContent}>
+                <View style={styles.notificationHeader}>
+                  <Ionicons name="calendar" size={22} color={Colors.primary} />
+                  <Text style={styles.notificationTitle}>Weekly Career Sprint</Text>
+                </View>
+                <Text style={styles.notificationSubtitle}>
+                  Get a motivating reminder every Monday at 9 AM to focus on your career goals
+                </Text>
+              </View>
+              <Switch
+                value={weeklyReminderEnabled}
+                onValueChange={handleWeeklyReminderToggle}
+                trackColor={{ false: Colors.lightGray, true: Colors.primary + '80' }}
+                thumbColor={weeklyReminderEnabled ? Colors.primary : Colors.mediumGray}
+                ios_backgroundColor={Colors.lightGray}
+              />
+            </View>
+
+            <View style={styles.notificationDivider} />
+
+            <View style={styles.notificationItem}>
+              <View style={styles.notificationContent}>
+                <View style={styles.notificationHeader}>
+                  <Ionicons name="alarm" size={22} color={Colors.success} />
+                  <Text style={styles.notificationTitle}>Daily Progress Nudge</Text>
+                </View>
+                <Text style={styles.notificationSubtitle}>
+                  A gentle reminder at 7 PM to log your daily wins and keep your streak alive
+                </Text>
+              </View>
+              <Switch
+                value={dailyNudgeEnabled}
+                onValueChange={handleDailyNudgeToggle}
+                trackColor={{ false: Colors.lightGray, true: Colors.success + '80' }}
+                thumbColor={dailyNudgeEnabled ? Colors.success : Colors.mediumGray}
+                ios_backgroundColor={Colors.lightGray}
+              />
+            </View>
+          </View>
         </View>
 
         {/* Career Goal */}
@@ -594,5 +708,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  notificationCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  notificationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  notificationContent: {
+    flex: 1,
+    marginRight: 16,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.navy,
+    marginLeft: 10,
+  },
+  notificationSubtitle: {
+    fontSize: 13,
+    color: Colors.mediumGray,
+    lineHeight: 19,
+    paddingLeft: 32,
+  },
+  notificationDivider: {
+    height: 1,
+    backgroundColor: Colors.lightGray,
+    marginVertical: 16,
   },
 });
