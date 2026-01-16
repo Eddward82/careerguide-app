@@ -13,7 +13,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
@@ -180,35 +179,33 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Progress Bar - Fixed at top */}
+      <View style={styles.progressBarContainer}>
+        <View style={styles.progressBar}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${((currentStep + 1) / totalSteps) * 100}%` },
+            ]}
+          />
+        </View>
+        <Text style={styles.progressText}>
+          Step {currentStep + 1} of {totalSteps}
+        </Text>
+      </View>
+
+      {/* Content with KeyboardAvoiding */}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.flex}>
-            {/* Progress Bar */}
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${((currentStep + 1) / totalSteps) * 100}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressText}>
-                Step {currentStep + 1} of {totalSteps}
-              </Text>
-            </View>
-
-            {/* Content */}
-            <Animated.View
-              style={[
-                styles.contentContainer,
-                { transform: [{ translateX: scrollX }] },
-              ]}
-            >
+        <Animated.View
+          style={[
+            styles.contentContainer,
+            { transform: [{ translateX: scrollX }] },
+          ]}
+        >
         {/* Step 1: Career Goal */}
         <View style={[styles.step, { width }]}>
           <ScrollView contentContainerStyle={styles.stepScroll}>
@@ -254,63 +251,87 @@ export default function OnboardingScreen() {
 
         {/* Step 2: Name */}
         <View style={[styles.step, { width }]}>
-          <ScrollView contentContainerStyle={styles.stepScroll}>
-            <Text style={styles.title}>What&apos;s your name?</Text>
-            <Text style={styles.subtitle}>
-              Let&apos;s personalize your experience
-            </Text>
+          <ScrollView
+            contentContainerStyle={styles.stepScrollWithButton}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.stepContent}>
+              <Text style={styles.title}>What&apos;s your name?</Text>
+              <Text style={styles.subtitle}>
+                Let&apos;s personalize your experience
+              </Text>
 
-            <View style={styles.inputCard}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your first name"
-                placeholderTextColor={Colors.mediumGray}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                autoFocus
-              />
+              <View style={styles.inputCard}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your first name"
+                  placeholderTextColor={Colors.mediumGray}
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={canProceed() ? handleNext : undefined}
+                  blurOnSubmit={false}
+                />
+              </View>
+
+              {/* Visual hint when input is empty */}
+              {name.trim().length === 0 && (
+                <Text style={styles.hint}>
+                  👆 Enter your name to continue
+                </Text>
+              )}
             </View>
           </ScrollView>
         </View>
 
         {/* Step 3: Current Role & Experience */}
         <View style={[styles.step, { width }]}>
-          <ScrollView contentContainerStyle={styles.stepScroll}>
-            <Text style={styles.title}>Tell us about your background</Text>
-            <Text style={styles.subtitle}>This helps us personalize your advice</Text>
+          <ScrollView
+            contentContainerStyle={styles.stepScrollWithButton}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.stepContent}>
+              <Text style={styles.title}>Tell us about your background</Text>
+              <Text style={styles.subtitle}>This helps us personalize your advice</Text>
 
-            <View style={styles.inputCard}>
-              <Text style={styles.label}>What&apos;s your current role?</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Marketing Manager"
-                placeholderTextColor={Colors.mediumGray}
-                value={currentRole}
-                onChangeText={setCurrentRole}
-                autoCapitalize="words"
-              />
-            </View>
-
-            <View style={styles.sliderCard}>
-              <Text style={styles.label}>Years of experience?</Text>
-              <View style={styles.sliderValueContainer}>
-                <Text style={styles.sliderValue}>{yearsExperience} years</Text>
+              <View style={styles.inputCard}>
+                <Text style={styles.label}>What&apos;s your current role?</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Marketing Manager"
+                  placeholderTextColor={Colors.mediumGray}
+                  value={currentRole}
+                  onChangeText={setCurrentRole}
+                  autoCapitalize="words"
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                />
               </View>
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={20}
-                step={1}
-                value={yearsExperience}
-                onValueChange={setYearsExperience}
-                minimumTrackTintColor={Colors.primary}
-                maximumTrackTintColor={Colors.lightGray}
-                thumbTintColor={Colors.primary}
-              />
-              <View style={styles.sliderLabels}>
-                <Text style={styles.sliderLabelText}>0</Text>
-                <Text style={styles.sliderLabelText}>20+</Text>
+
+              <View style={styles.sliderCard}>
+                <Text style={styles.label}>Years of experience?</Text>
+                <View style={styles.sliderValueContainer}>
+                  <Text style={styles.sliderValue}>{yearsExperience} years</Text>
+                </View>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={20}
+                  step={1}
+                  value={yearsExperience}
+                  onValueChange={setYearsExperience}
+                  minimumTrackTintColor={Colors.primary}
+                  maximumTrackTintColor={Colors.lightGray}
+                  thumbTintColor={Colors.primary}
+                />
+                <View style={styles.sliderLabels}>
+                  <Text style={styles.sliderLabelText}>0</Text>
+                  <Text style={styles.sliderLabelText}>20+</Text>
+                </View>
               </View>
             </View>
           </ScrollView>
@@ -362,58 +383,56 @@ export default function OnboardingScreen() {
             </View>
           </ScrollView>
         </View>
-      </Animated.View>
+        </Animated.View>
 
-            {/* Navigation Buttons */}
-            <View
+        {/* Navigation Buttons - Inside KeyboardAvoidingView */}
+        <View
+          style={[
+            styles.navigationContainer,
+            { paddingBottom: Math.max(insets.bottom, 20) + 24 },
+          ]}
+        >
+          {currentStep > 0 && (
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+            </TouchableOpacity>
+          )}
+
+          <Animated.View
+            style={[
+              styles.nextButtonContainer,
+              currentStep === 0 && styles.nextButtonFull,
+              { transform: [{ scale: buttonScale }] },
+            ]}
+          >
+            <TouchableOpacity
               style={[
-                styles.navigationContainer,
-                { paddingBottom: Math.max(insets.bottom, 20) + 24 },
+                styles.nextButton,
+                !canProceed() && styles.nextButtonDisabled,
               ]}
+              onPress={handleNext}
+              disabled={!canProceed()}
+              activeOpacity={0.8}
             >
-              {currentStep > 0 && (
-                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                  <Ionicons name="arrow-back" size={24} color={Colors.navy} />
-                </TouchableOpacity>
-              )}
-
-              <Animated.View
+              <Text
                 style={[
-                  styles.nextButtonContainer,
-                  currentStep === 0 && styles.nextButtonFull,
-                  { transform: [{ scale: buttonScale }] },
+                  styles.nextButtonText,
+                  !canProceed() && styles.nextButtonTextDisabled,
                 ]}
               >
-                <TouchableOpacity
-                  style={[
-                    styles.nextButton,
-                    !canProceed() && styles.nextButtonDisabled,
-                  ]}
-                  onPress={handleNext}
-                  disabled={!canProceed()}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.nextButtonText,
-                      !canProceed() && styles.nextButtonTextDisabled,
-                    ]}
-                  >
-                    {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
-                  </Text>
-                  {canProceed() && (
-                    <Ionicons
-                      name="arrow-forward"
-                      size={20}
-                      color={Colors.white}
-                      style={styles.buttonIcon}
-                    />
-                  )}
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
+                {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
+              </Text>
+              {canProceed() && (
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color={Colors.white}
+                  style={styles.buttonIcon}
+                />
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -456,7 +475,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   stepScroll: {
-    paddingBottom: 120,
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  stepScrollWithButton: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  stepContent: {
+    flex: 1,
   },
   title: {
     fontSize: 28,
@@ -541,6 +568,14 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 16,
     color: Colors.navy,
+    minHeight: 40,
+  },
+  hint: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    textAlign: 'center',
+    marginTop: 16,
+    fontStyle: 'italic',
   },
   sliderCard: {
     backgroundColor: Colors.white,
@@ -575,10 +610,6 @@ const styles = StyleSheet.create({
     color: Colors.mediumGray,
   },
   navigationContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     paddingHorizontal: 24,
     paddingTop: 24,
