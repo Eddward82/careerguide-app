@@ -18,6 +18,7 @@ import { getUserProfile, clearAllData } from '@/utils/storage';
 import { UserProfile } from '@/types';
 import ShareJourneyCard from '@/components/ShareJourneyCard';
 import * as Haptics from 'expo-haptics';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   getWeeklyReminderEnabled,
   setWeeklyReminderEnabled,
@@ -28,10 +29,12 @@ import {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [weeklyReminderEnabled, setWeeklyReminderState] = useState(false);
   const [dailyNudgeEnabled, setDailyNudgeState] = useState(false);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'synced' | 'syncing' | 'offline'>('synced');
 
   useEffect(() => {
     loadProfile();
@@ -96,6 +99,29 @@ export default function ProfileScreen() {
     if (value) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+  };
+
+  const handleSignOut = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out? Your data is safely backed up to the cloud.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/auth/login');
+          },
+        },
+      ]
+    );
   };
 
   // DIRECT RESET - NO ALERT
@@ -243,7 +269,36 @@ export default function ProfileScreen() {
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <View style={styles.headerTop}>
+            <Text style={styles.headerTitle}>Profile</Text>
+
+            {/* Cloud Sync Indicator */}
+            {user && (
+              <View style={styles.cloudSyncBadge}>
+                <Ionicons
+                  name={
+                    cloudSyncStatus === 'synced' ? 'cloud-done' :
+                    cloudSyncStatus === 'syncing' ? 'cloud-upload' :
+                    'cloud-offline'
+                  }
+                  size={16}
+                  color={
+                    cloudSyncStatus === 'synced' ? Colors.success :
+                    cloudSyncStatus === 'syncing' ? Colors.primary :
+                    Colors.mediumGray
+                  }
+                />
+                <Text style={[
+                  styles.cloudSyncText,
+                  { color: cloudSyncStatus === 'synced' ? Colors.success : Colors.mediumGray }
+                ]}>
+                  {cloudSyncStatus === 'synced' ? 'Synced' :
+                   cloudSyncStatus === 'syncing' ? 'Syncing...' :
+                   'Offline'}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* DIRECT Reset Button - NO CONFIRMATION */}
           <TouchableOpacity
@@ -379,6 +434,18 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.infoCard}>
+            {user && (
+              <>
+                <View style={styles.infoRow}>
+                  <Ionicons name="mail" size={20} color={Colors.mediumGray} />
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoLabel}>Email</Text>
+                    <Text style={styles.infoValue}>{user.email}</Text>
+                  </View>
+                </View>
+                <View style={styles.infoDivider} />
+              </>
+            )}
             <View style={styles.infoRow}>
               <Ionicons name="calendar" size={20} color={Colors.mediumGray} />
               <View style={styles.infoContent}>
@@ -392,6 +459,18 @@ export default function ProfileScreen() {
               </View>
             </View>
           </View>
+
+          {/* Sign Out Button */}
+          {user && (
+            <TouchableOpacity
+              style={styles.signOutButton}
+              onPress={handleSignOut}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={20} color={Colors.error} />
+              <Text style={styles.signOutButtonText}>Sign Out</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Settings */}
@@ -476,10 +555,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: Colors.navy,
+  },
+  cloudSyncBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F9FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+  },
+  cloudSyncText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   statsCard: {
     backgroundColor: Colors.white,
@@ -576,6 +673,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.navy,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: Colors.lightGray,
+    marginVertical: 12,
+  },
+  signOutButton: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.error,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: 8,
+  },
+  signOutButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.error,
   },
   settingCard: {
     backgroundColor: Colors.white,

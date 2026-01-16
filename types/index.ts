@@ -49,6 +49,7 @@ export interface UserProfile {
 
   // Progress tracking
   currentStreak: number;
+  longestStreak?: number;
   lastActivityDate: string;
   hasCompletedOnboarding: boolean;
   sessions: CoachingSession[];

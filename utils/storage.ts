@@ -8,10 +8,25 @@ import {
   BadgeType,
   WeeklyChallenge
 } from '@/types';
+import { supabase } from '@/lib/supabase';
+import { syncProfileToCloud, syncSessionToCloud } from '@/utils/supabaseSync';
 
 const STORAGE_KEYS = {
   USER_PROFILE: '@careerguide_user_profile',
   SESSIONS: '@careerguide_sessions',
+};
+
+/**
+ * Get current authenticated user ID for cloud sync
+ */
+const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id ?? null;
+  } catch (error) {
+    console.error('Error getting user ID:', error);
+    return null;
+  }
 };
 
 // Generate unique referral code
@@ -144,7 +159,14 @@ export const getUserProfile = async (): Promise<UserProfile> => {
 // Save user profile
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
   try {
+    // Save locally first
     await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+
+    // Sync to cloud if user is authenticated
+    const userId = await getCurrentUserId();
+    if (userId) {
+      await syncProfileToCloud(userId, profile);
+    }
   } catch (error) {
     console.error('Error saving user profile:', error);
   }
@@ -194,6 +216,12 @@ export const addCoachingSession = async (session: CoachingSession): Promise<void
     await checkAndUnlockBadges(profile);
 
     await saveUserProfile(profile);
+
+    // Sync session to cloud if user is authenticated
+    const userId = await getCurrentUserId();
+    if (userId) {
+      await syncSessionToCloud(userId, session);
+    }
   } catch (error) {
     console.error('Error adding coaching session:', error);
   }
@@ -305,6 +333,12 @@ export const addProgressLog = async (sessionId: string, note: string): Promise<v
     if (sessionIndex !== -1) {
       profile.sessions[sessionIndex].progressLog = note;
       await saveUserProfile(profile);
+
+      // Sync updated session to cloud if user is authenticated
+      const userId = await getCurrentUserId();
+      if (userId) {
+        await syncSessionToCloud(userId, profile.sessions[sessionIndex]);
+      }
     }
   } catch (error) {
     console.error('Error adding progress log:', error);
