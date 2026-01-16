@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -58,6 +58,15 @@ export default function OnboardingScreen() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   const totalSteps = 4;
+
+  // Ensure onboarding always starts at Step 1 (index 0)
+  useEffect(() => {
+    // Reset to first step on mount
+    setCurrentStep(0);
+    scrollX.setValue(0);
+    console.log('Onboarding initialized at Step 1');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNext = () => {
     // Haptic feedback for button press
@@ -352,7 +361,7 @@ export default function OnboardingScreen() {
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
-                autoFocus
+                autoFocus={currentStep === 1}
                 returnKeyType="done"
                 onSubmitEditing={() => {
                   if (name.trim().length > 0) {
