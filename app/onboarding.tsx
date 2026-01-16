@@ -252,37 +252,86 @@ export default function OnboardingScreen() {
         {/* Step 2: Name */}
         <View style={[styles.step, { width }]}>
           <ScrollView
-            contentContainerStyle={styles.stepScrollWithButton}
+            contentContainerStyle={styles.stepScrollInline}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.stepContent}>
-              <Text style={styles.title}>What&apos;s your name?</Text>
-              <Text style={styles.subtitle}>
-                Let&apos;s personalize your experience
+            <Text style={styles.title}>What&apos;s your name?</Text>
+            <Text style={styles.subtitle}>
+              Let&apos;s personalize your experience
+            </Text>
+
+            <View style={styles.inputCard}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your first name"
+                placeholderTextColor={Colors.mediumGray}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  if (name.trim().length > 0) {
+                    handleNext();
+                  }
+                }}
+                blurOnSubmit={false}
+              />
+            </View>
+
+            {/* Visual hint when input is empty */}
+            {name.trim().length === 0 && (
+              <Text style={styles.hint}>
+                👆 Enter your name to continue
               </Text>
+            )}
 
-              <View style={styles.inputCard}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your first name"
-                  placeholderTextColor={Colors.mediumGray}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={canProceed() ? handleNext : undefined}
-                  blurOnSubmit={false}
-                />
-              </View>
-
-              {/* Visual hint when input is empty */}
-              {name.trim().length === 0 && (
-                <Text style={styles.hint}>
-                  👆 Enter your name to continue
-                </Text>
+            {/* INLINE NAVIGATION BUTTONS - ALWAYS VISIBLE */}
+            <View style={styles.inlineButtonContainer}>
+              {currentStep > 0 && (
+                <TouchableOpacity
+                  style={styles.inlineBackButton}
+                  onPress={handleBack}
+                >
+                  <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                </TouchableOpacity>
               )}
+
+              <Animated.View
+                style={[
+                  styles.inlineNextButtonContainer,
+                  currentStep === 0 && styles.nextButtonFull,
+                  { transform: [{ scale: buttonScale }] },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.inlineNextButton,
+                    name.trim().length === 0 && styles.inlineNextButtonDisabled,
+                  ]}
+                  onPress={handleNext}
+                  disabled={name.trim().length === 0}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.nextButtonText,
+                      name.trim().length === 0 && styles.nextButtonTextDisabled,
+                    ]}
+                  >
+                    Continue
+                  </Text>
+                  {name.trim().length > 0 && (
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color={Colors.white}
+                      style={styles.buttonIcon}
+                    />
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </ScrollView>
         </View>
@@ -290,49 +339,91 @@ export default function OnboardingScreen() {
         {/* Step 3: Current Role & Experience */}
         <View style={[styles.step, { width }]}>
           <ScrollView
-            contentContainerStyle={styles.stepScrollWithButton}
+            contentContainerStyle={styles.stepScrollInline}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.stepContent}>
-              <Text style={styles.title}>Tell us about your background</Text>
-              <Text style={styles.subtitle}>This helps us personalize your advice</Text>
+            <Text style={styles.title}>Tell us about your background</Text>
+            <Text style={styles.subtitle}>This helps us personalize your advice</Text>
 
-              <View style={styles.inputCard}>
-                <Text style={styles.label}>What&apos;s your current role?</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., Marketing Manager"
-                  placeholderTextColor={Colors.mediumGray}
-                  value={currentRole}
-                  onChangeText={setCurrentRole}
-                  autoCapitalize="words"
-                  returnKeyType="done"
-                  onSubmitEditing={() => Keyboard.dismiss()}
-                />
-              </View>
+            <View style={styles.inputCard}>
+              <Text style={styles.label}>What&apos;s your current role?</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Marketing Manager"
+                placeholderTextColor={Colors.mediumGray}
+                value={currentRole}
+                onChangeText={setCurrentRole}
+                autoCapitalize="words"
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+              />
+            </View>
 
-              <View style={styles.sliderCard}>
-                <Text style={styles.label}>Years of experience?</Text>
-                <View style={styles.sliderValueContainer}>
-                  <Text style={styles.sliderValue}>{yearsExperience} years</Text>
-                </View>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={20}
-                  step={1}
-                  value={yearsExperience}
-                  onValueChange={setYearsExperience}
-                  minimumTrackTintColor={Colors.primary}
-                  maximumTrackTintColor={Colors.lightGray}
-                  thumbTintColor={Colors.primary}
-                />
-                <View style={styles.sliderLabels}>
-                  <Text style={styles.sliderLabelText}>0</Text>
-                  <Text style={styles.sliderLabelText}>20+</Text>
-                </View>
+            <View style={styles.sliderCard}>
+              <Text style={styles.label}>Years of experience?</Text>
+              <View style={styles.sliderValueContainer}>
+                <Text style={styles.sliderValue}>{yearsExperience} years</Text>
               </View>
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={20}
+                step={1}
+                value={yearsExperience}
+                onValueChange={setYearsExperience}
+                minimumTrackTintColor={Colors.primary}
+                maximumTrackTintColor={Colors.lightGray}
+                thumbTintColor={Colors.primary}
+              />
+              <View style={styles.sliderLabels}>
+                <Text style={styles.sliderLabelText}>0</Text>
+                <Text style={styles.sliderLabelText}>20+</Text>
+              </View>
+            </View>
+
+            {/* INLINE NAVIGATION BUTTONS */}
+            <View style={styles.inlineButtonContainer}>
+              <TouchableOpacity
+                style={styles.inlineBackButton}
+                onPress={handleBack}
+              >
+                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+              </TouchableOpacity>
+
+              <Animated.View
+                style={[
+                  styles.inlineNextButtonContainer,
+                  { transform: [{ scale: buttonScale }] },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.inlineNextButton,
+                    currentRole.trim().length === 0 && styles.inlineNextButtonDisabled,
+                  ]}
+                  onPress={handleNext}
+                  disabled={currentRole.trim().length === 0}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.nextButtonText,
+                      currentRole.trim().length === 0 && styles.nextButtonTextDisabled,
+                    ]}
+                  >
+                    Continue
+                  </Text>
+                  {currentRole.trim().length > 0 && (
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color={Colors.white}
+                      style={styles.buttonIcon}
+                    />
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </ScrollView>
         </View>
@@ -385,54 +476,56 @@ export default function OnboardingScreen() {
         </View>
         </Animated.View>
 
-        {/* Navigation Buttons - Inside KeyboardAvoidingView */}
-        <View
-          style={[
-            styles.navigationContainer,
-            { paddingBottom: Math.max(insets.bottom, 20) + 24 },
-          ]}
-        >
-          {currentStep > 0 && (
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color={Colors.navy} />
-            </TouchableOpacity>
-          )}
-
-          <Animated.View
+        {/* Navigation Buttons - Only show for steps 0 and 3 (steps without inline buttons) */}
+        {(currentStep === 0 || currentStep === 3) && (
+          <View
             style={[
-              styles.nextButtonContainer,
-              currentStep === 0 && styles.nextButtonFull,
-              { transform: [{ scale: buttonScale }] },
+              styles.navigationContainer,
+              { paddingBottom: Math.max(insets.bottom, 20) + 24 },
             ]}
           >
-            <TouchableOpacity
+            {currentStep > 0 && (
+              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+              </TouchableOpacity>
+            )}
+
+            <Animated.View
               style={[
-                styles.nextButton,
-                !canProceed() && styles.nextButtonDisabled,
+                styles.nextButtonContainer,
+                currentStep === 0 && styles.nextButtonFull,
+                { transform: [{ scale: buttonScale }] },
               ]}
-              onPress={handleNext}
-              disabled={!canProceed()}
-              activeOpacity={0.8}
             >
-              <Text
+              <TouchableOpacity
                 style={[
-                  styles.nextButtonText,
-                  !canProceed() && styles.nextButtonTextDisabled,
+                  styles.nextButton,
+                  !canProceed() && styles.nextButtonDisabled,
                 ]}
+                onPress={handleNext}
+                disabled={!canProceed()}
+                activeOpacity={0.8}
               >
-                {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
-              </Text>
-              {canProceed() && (
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color={Colors.white}
-                  style={styles.buttonIcon}
-                />
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+                <Text
+                  style={[
+                    styles.nextButtonText,
+                    !canProceed() && styles.nextButtonTextDisabled,
+                  ]}
+                >
+                  {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
+                </Text>
+                {canProceed() && (
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color={Colors.white}
+                    style={styles.buttonIcon}
+                  />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -481,6 +574,10 @@ const styles = StyleSheet.create({
   stepScrollWithButton: {
     flexGrow: 1,
     paddingBottom: 20,
+  },
+  stepScrollInline: {
+    flexGrow: 1,
+    paddingBottom: 40,
   },
   stepContent: {
     flex: 1,
@@ -718,5 +815,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.mediumGray,
     fontStyle: 'italic',
+  },
+  // Inline button styles for steps with keyboard input
+  inlineButtonContainer: {
+    flexDirection: 'row',
+    marginTop: 32,
+    gap: 12,
+  },
+  inlineBackButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inlineNextButtonContainer: {
+    flex: 1,
+  },
+  inlineNextButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: 28,
+    height: 56,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  inlineNextButtonDisabled: {
+    backgroundColor: Colors.lightGray,
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });
