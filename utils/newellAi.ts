@@ -1,0 +1,226 @@
+import Constants from 'expo-constants';
+
+// Access environment variables from both Constants.expoConfig and process.env
+const NEWELL_API_URL =
+  Constants.expoConfig?.extra?.EXPO_PUBLIC_NEWELL_API_URL ||
+  process.env.EXPO_PUBLIC_NEWELL_API_URL ||
+  'https://newell.fastshot.ai';
+
+const PROJECT_ID =
+  Constants.expoConfig?.extra?.EXPO_PUBLIC_PROJECT_ID ||
+  process.env.EXPO_PUBLIC_PROJECT_ID;
+
+interface NewellAIResponse {
+  success: boolean;
+  data?: {
+    message?: string;
+    steps?: string[];
+  };
+  error?: string;
+}
+
+/**
+ * Generate initial career transition plan using Newell AI
+ */
+export const generateInitialPlan = async (
+  name: string,
+  currentRole: string,
+  targetGoal: string,
+  yearsExperience: number,
+  timeline: string
+): Promise<string[]> => {
+  try {
+    // Create hyper-personalized prompt
+    const prompt = `You are a professional career coach. Create a focused 3-step immediate action plan for ${name}, who is a ${currentRole} with ${yearsExperience} years of experience, transitioning to ${targetGoal} within ${timeline}.
+
+Focus on:
+1. Identifying and leveraging transferable skills
+2. Immediate actionable steps they can take this week
+3. Building momentum for their transition
+
+Return ONLY 3 specific, actionable steps as a numbered list. Each step should be:
+- Concrete and immediately actionable
+- Specific to their background and goal
+- Achievable within 1-2 weeks
+
+Format your response as:
+1. [First actionable step]
+2. [Second actionable step]
+3. [Third actionable step]`;
+
+    const response = await fetch(`${NEWELL_API_URL}/v1/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Project-ID': PROJECT_ID || '',
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        model: 'gpt-4o-mini', // Fast and cost-effective for plan generation
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Newell AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Extract the AI response
+    const aiMessage = data.choices?.[0]?.message?.content || '';
+
+    // Parse the numbered list into an array
+    const steps = parseActionSteps(aiMessage);
+
+    // If parsing fails, return fallback steps
+    if (steps.length === 0) {
+      return getFallbackPlan(currentRole, targetGoal);
+    }
+
+    return steps;
+  } catch (error) {
+    console.error('Error generating initial plan with Newell AI:', error);
+    // Return fallback plan if API fails
+    return getFallbackPlan(currentRole, targetGoal);
+  }
+};
+
+/**
+ * Parse AI response into action steps
+ */
+function parseActionSteps(aiResponse: string): string[] {
+  const steps: string[] = [];
+
+  // Split by lines and filter numbered items
+  const lines = aiResponse.split('\n').filter(line => line.trim().length > 0);
+
+  for (const line of lines) {
+    // Match patterns like "1. ", "1) ", or "Step 1: "
+    const match = line.match(/^(?:\d+[\.)]\s*|Step\s+\d+:\s*)(.*)/i);
+    if (match && match[1]) {
+      const step = match[1].trim();
+      if (step.length > 0) {
+        steps.push(step);
+      }
+    }
+  }
+
+  // If we found steps, return the first 3
+  if (steps.length > 0) {
+    return steps.slice(0, 3);
+  }
+
+  // Alternative: try to split by numbers at the start of lines
+  const numberedLines = aiResponse
+    .split('\n')
+    .filter(line => /^\d+/.test(line.trim()))
+    .map(line => line.replace(/^\d+[\.)]\s*/, '').trim())
+    .filter(line => line.length > 0);
+
+  if (numberedLines.length > 0) {
+    return numberedLines.slice(0, 3);
+  }
+
+  return [];
+}
+
+/**
+ * Fallback plan if AI generation fails
+ */
+function getFallbackPlan(currentRole: string, targetGoal: string): string[] {
+  return [
+    `Audit your current skills from ${currentRole} and map them to ${targetGoal} requirements. Create a skills gap document.`,
+    `Connect with 3 professionals already working in ${targetGoal}. Schedule informational interviews to learn about their transition journey.`,
+    `Start building your professional brand: Update your LinkedIn profile highlighting transferable skills relevant to ${targetGoal}.`,
+  ];
+}
+
+/**
+ * Generate coaching advice for a specific challenge
+ */
+export const generateCoachingAdvice = async (
+  challenge: string,
+  userProfile: {
+    name: string;
+    currentRole: string;
+    targetGoal: string;
+    yearsExperience: number;
+  }
+): Promise<{ advice: string; actionPlan: string[] }> => {
+  try {
+    const { name, currentRole, targetGoal, yearsExperience } = userProfile;
+
+    const prompt = `You are a professional career coach. ${name} is transitioning from ${currentRole} (${yearsExperience} years experience) to ${targetGoal}. They are facing this challenge:
+
+"${challenge}"
+
+Provide:
+1. Brief empathetic response (2-3 sentences)
+2. Three specific actionable steps they can take to address this challenge
+
+Format your response as:
+[Brief empathetic response]
+
+Action Steps:
+1. [First step]
+2. [Second step]
+3. [Third step]`;
+
+    const response = await fetch(`${NEWELL_API_URL}/v1/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Project-ID': PROJECT_ID || '',
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        model: 'gpt-4o-mini',
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Newell AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiMessage = data.choices?.[0]?.message?.content || '';
+
+    // Split response into advice and action steps
+    const parts = aiMessage.split(/Action Steps?:/i);
+    const advice = parts[0]?.trim() || 'I understand your challenge. Let\'s work through this together.';
+    const actionStepsText = parts[1] || '';
+
+    const actionSteps = parseActionSteps(actionStepsText);
+
+    return {
+      advice,
+      actionPlan: actionSteps.length > 0 ? actionSteps : [
+        'Break down the challenge into smaller, manageable tasks',
+        'Seek advice from someone who has overcome similar obstacles',
+        'Take one concrete action today, no matter how small',
+      ],
+    };
+  } catch (error) {
+    console.error('Error generating coaching advice:', error);
+    return {
+      advice: 'I understand your challenge. Let\'s work through this together with a structured approach.',
+      actionPlan: [
+        'Break down the challenge into smaller, manageable tasks',
+        'Seek advice from someone who has overcome similar obstacles',
+        'Take one concrete action today, no matter how small',
+      ],
+    };
+  }
+};

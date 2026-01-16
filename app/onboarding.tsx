@@ -20,8 +20,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
-import { CareerGoal, TransitionTimeline } from '@/types';
-import { completeOnboarding, clearAllData } from '@/utils/storage';
+import { CareerGoal, TransitionTimeline, CoachingSession } from '@/types';
+import { completeOnboarding, clearAllData, addCoachingSession } from '@/utils/storage';
+import { generateInitialPlan } from '@/utils/newellAi';
 
 const { width } = Dimensions.get('window');
 
@@ -109,24 +110,58 @@ export default function OnboardingScreen() {
     if (!name || !selectedGoal || !currentRole) return;
 
     setIsLoading(true);
-    // Simulate plan preparation
-    await new Promise(resolve => setTimeout(resolve, 2500));
 
-    await completeOnboarding(
-      name,
-      selectedGoal,
-      currentRole,
-      yearsExperience,
-      selectedTimeline
-    );
+    try {
+      // Generate personalized initial plan using Newell AI
+      const timelineLabel = timelines.find(t => t.value === selectedTimeline)?.label || '3-6 months';
+      const actionPlan = await generateInitialPlan(
+        name,
+        currentRole,
+        selectedGoal,
+        yearsExperience,
+        timelineLabel
+      );
 
-    setIsLoading(false);
-    setShowWelcome(true);
+      // Complete onboarding first
+      await completeOnboarding(
+        name,
+        selectedGoal,
+        currentRole,
+        yearsExperience,
+        selectedTimeline
+      );
 
-    // Navigate to main app after showing welcome
-    setTimeout(() => {
+      // Create and save the initial coaching session
+      const initialSession: CoachingSession = {
+        id: `initial-${Date.now()}`,
+        date: new Date().toISOString(),
+        challenge: `Starting your journey from ${currentRole} to ${selectedGoal}`,
+        actionPlan: actionPlan,
+        createdAt: Date.now(),
+      };
+
+      await addCoachingSession(initialSession);
+
+      setIsLoading(false);
+      setShowWelcome(true);
+
+      // Navigate to main app after showing welcome
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 3000);
+    } catch (error) {
+      console.error('Error during onboarding completion:', error);
+      // Even if AI generation fails, complete onboarding
+      await completeOnboarding(
+        name,
+        selectedGoal,
+        currentRole,
+        yearsExperience,
+        selectedTimeline
+      );
+      setIsLoading(false);
       router.replace('/(tabs)');
-    }, 3000);
+    }
   };
 
   const handleEmergencyReset = async () => {

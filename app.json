@@ -38,6 +38,10 @@
     "experiments": {
       "typedRoutes": true,
       "baseUrl": ""
+    },
+    "extra": {
+      "EXPO_PUBLIC_NEWELL_API_URL": "https://newell.fastshot.ai",
+      "EXPO_PUBLIC_PROJECT_ID": "1e5802f9-dfa7-4172-b2b4-55f412ea21b3"
     }
   }
 }

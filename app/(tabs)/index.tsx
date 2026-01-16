@@ -155,7 +155,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Empty State or Content */}
+        {/* Welcome Card with Initial Plan or Regular Content */}
         {!hasAnySessions ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
@@ -174,6 +174,87 @@ export default function HomeScreen() {
               <Text style={styles.emptyButtonText}>Get Your First Coaching</Text>
             </TouchableOpacity>
           </View>
+        ) : profile?.sessions.length === 1 && profile.sessions[0].id.startsWith('initial-') ? (
+          // Show personalized welcome card for first-time users with initial plan
+          <>
+            {/* Personalized Welcome Header */}
+            <View style={styles.welcomeHeader}>
+              <Text style={styles.welcomeTitle}>
+                Welcome, {profile.name}! 🎉
+              </Text>
+              <Text style={styles.welcomeSubtitle}>
+                We&apos;re starting your journey from{' '}
+                <Text style={styles.welcomeHighlight}>{profile.currentRole}</Text> to{' '}
+                <Text style={styles.welcomeHighlight}>{profile.careerGoal}</Text>.
+              </Text>
+            </View>
+
+            {/* First Milestone Card */}
+            <View style={styles.milestoneCard}>
+              <View style={styles.milestoneHeader}>
+                <View style={styles.milestoneIconContainer}>
+                  <Ionicons name="flag" size={24} color={Colors.primary} />
+                </View>
+                <View style={styles.milestoneHeaderText}>
+                  <Text style={styles.milestoneTitle}>Your First Milestone</Text>
+                  <Text style={styles.milestoneSubtitle}>
+                    AI-curated action plan for you
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.milestoneContent}>
+                {profile.sessions[0].actionPlan.map((step, index) => (
+                  <View key={index} style={styles.milestoneStep}>
+                    <View style={styles.milestoneStepNumber}>
+                      <Text style={styles.milestoneStepNumberText}>{index + 1}</Text>
+                    </View>
+                    <Text style={styles.milestoneStepText}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.milestoneButton}
+                onPress={() => router.push('/history')}
+              >
+                <Text style={styles.milestoneButtonText}>View Full Roadmap</Text>
+                <Ionicons name="arrow-forward" size={18} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Get New Coaching Button */}
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <TouchableOpacity
+                style={styles.coachingButton}
+                onPress={() => router.push('/coaching')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.coachingButtonContent}>
+                  <Ionicons name="add" size={28} color={Colors.white} />
+                  <Text style={styles.coachingButtonText}>Get New Coaching</Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+
+            {/* Quick Stats */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{profile?.sessions.length || 0}</Text>
+                <Text style={styles.statLabel}>Sessions</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{profile?.currentStreak || 0}</Text>
+                <Text style={styles.statLabel}>Day Streak</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>
+                  {profile?.sessions.filter((s) => s.progressLog).length || 0}
+                </Text>
+                <Text style={styles.statLabel}>Logged</Text>
+              </View>
+            </View>
+          </>
         ) : (
           <>
             {/* Daily Motivation Card */}
@@ -586,5 +667,115 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.mediumGray,
     marginTop: 4,
+  },
+  welcomeHeader: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 16,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginBottom: 12,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: Colors.navy,
+    lineHeight: 24,
+  },
+  welcomeHighlight: {
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  milestoneCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: '#50E3C2', // Mint Green accent
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  milestoneHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  milestoneIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E3F9F4', // Light mint green
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  milestoneHeaderText: {
+    flex: 1,
+  },
+  milestoneTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginBottom: 4,
+  },
+  milestoneSubtitle: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+  },
+  milestoneContent: {
+    marginBottom: 20,
+  },
+  milestoneStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  milestoneStepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  milestoneStepNumberText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  milestoneStepText: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.navy,
+    lineHeight: 22,
+  },
+  milestoneButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F7FF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  milestoneButtonText: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
   },
 });
