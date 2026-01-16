@@ -42,25 +42,21 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('🔄 Starting reset process...');
+
               // Clear all AsyncStorage data
               await clearAllData();
+              console.log('✅ Data cleared successfully');
 
-              // Show success message and redirect to index (which will route to onboarding)
-              Alert.alert(
-                '✓ Reset Complete',
-                'All data has been cleared. Welcome back!',
-                [
-                  {
-                    text: 'Start Fresh',
-                    onPress: () => {
-                      // Navigate to root index which will detect no onboarding and redirect
-                      router.replace('/');
-                    },
-                  },
-                ]
-              );
+              // Navigate directly to onboarding
+              console.log('🚀 Navigating to onboarding...');
+              router.replace('/onboarding');
+
+              // Reset the profile state
+              setProfile(null);
+
             } catch (err) {
-              console.error('Error resetting data:', err);
+              console.error('❌ Error resetting data:', err);
               Alert.alert(
                 'Reset Failed',
                 'There was an error resetting your data. Please try again.',

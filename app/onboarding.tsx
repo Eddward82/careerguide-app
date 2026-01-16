@@ -21,7 +21,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { CareerGoal, TransitionTimeline } from '@/types';
-import { completeOnboarding } from '@/utils/storage';
+import { completeOnboarding, clearAllData } from '@/utils/storage';
 
 const { width } = Dimensions.get('window');
 
@@ -129,6 +129,35 @@ export default function OnboardingScreen() {
     }, 3000);
   };
 
+  const handleEmergencyReset = async () => {
+    try {
+      console.log('🔄 Emergency reset triggered');
+      await clearAllData();
+      console.log('✅ Data cleared, resetting to step 1');
+
+      // Reset all state
+      setCurrentStep(0);
+      setName('');
+      setSelectedGoal(null);
+      setCurrentRole('');
+      setYearsExperience(2);
+      setSelectedTimeline('3-6m');
+      setIsLoading(false);
+      setShowWelcome(false);
+
+      // Reset animation
+      Animated.timing(scrollX, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      console.error('❌ Emergency reset failed:', err);
+    }
+  };
+
   const canProceed = () => {
     switch (currentStep) {
       case 0:
@@ -147,6 +176,14 @@ export default function OnboardingScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
+        {/* Emergency Reset Button */}
+        <TouchableOpacity
+          style={styles.emergencyResetButton}
+          onPress={handleEmergencyReset}
+        >
+          <Ionicons name="refresh" size={20} color={Colors.mediumGray} />
+        </TouchableOpacity>
+
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingTitle}>Preparing Your Plan...</Text>
@@ -161,6 +198,14 @@ export default function OnboardingScreen() {
   if (showWelcome) {
     return (
       <SafeAreaView style={styles.container}>
+        {/* Emergency Reset Button */}
+        <TouchableOpacity
+          style={styles.emergencyResetButton}
+          onPress={handleEmergencyReset}
+        >
+          <Ionicons name="refresh" size={20} color={Colors.mediumGray} />
+        </TouchableOpacity>
+
         <View style={styles.welcomeContainer}>
           <View style={styles.welcomeIconContainer}>
             <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
@@ -913,5 +958,22 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGray,
     shadowOpacity: 0,
     elevation: 0,
+  },
+  emergencyResetButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
