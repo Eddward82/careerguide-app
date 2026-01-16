@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,11 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  Alert,
+  Animated,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
 import { getAllSessions, addProgressLog, updateStreak } from '@/utils/storage';
 import { CoachingSession } from '@/types';
@@ -22,6 +23,12 @@ export default function ActionPlanScreen() {
   const [session, setSession] = useState<CoachingSession | null>(null);
   const [showLogModal, setShowLogModal] = useState(false);
   const [progressNote, setProgressNote] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [newStreakCount, setNewStreakCount] = useState(0);
+
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const successScale = useRef(new Animated.Value(0)).current;
+  const fireScale = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadSession();
@@ -38,20 +45,58 @@ export default function ActionPlanScreen() {
   const handleLogProgress = async () => {
     if (!progressNote.trim() || !session) return;
 
+    // Haptic feedback on button press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     await addProgressLog(session.id, progressNote);
     const newStreak = await updateStreak();
+    setNewStreakCount(newStreak);
 
-    setShowLogModal(false);
-    Alert.alert(
-      'Progress Logged!',
-      `Great work! Your streak is now ${newStreak} days. Keep it up!`,
-      [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)'),
-        },
-      ]
-    );
+    // Show success animation
+    setShowSuccess(true);
+
+    // Animate success checkmark
+    Animated.spring(successScale, {
+      toValue: 1,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
+
+    // Animate fire icon with bounce
+    setTimeout(() => {
+      Animated.spring(fireScale, {
+        toValue: 1,
+        tension: 40,
+        friction: 5,
+        useNativeDriver: true,
+      }).start();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, 300);
+
+    // Auto-dismiss after animation
+    setTimeout(() => {
+      setShowLogModal(false);
+      setShowSuccess(false);
+      setProgressNote('');
+      successScale.setValue(0);
+      fireScale.setValue(0);
+      router.replace('/(tabs)');
+    }, 2500);
   };
 
   if (!session) {
@@ -124,45 +169,124 @@ export default function ActionPlanScreen() {
         visible={showLogModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowLogModal(false)}
+        onRequestClose={() => {
+          setShowLogModal(false);
+          setShowSuccess(false);
+          setProgressNote('');
+        }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Log Your Progress</Text>
-              <TouchableOpacity onPress={() => setShowLogModal(false)}>
-                <Ionicons name="close" size={28} color={Colors.navy} />
-              </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setShowLogModal(false);
+            setShowSuccess(false);
+            setProgressNote('');
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalContent}>
+              {!showSuccess ? (
+                <>
+                  <View style={styles.modalHeader}>
+                    <View style={styles.modalTitleContainer}>
+                      <View style={styles.modalIconContainer}>
+                        <Ionicons name="create" size={24} color={Colors.success} />
+                      </View>
+                      <Text style={styles.modalTitle}>Log Your Win</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowLogModal(false);
+                        setProgressNote('');
+                      }}
+                      style={styles.closeButton}
+                    >
+                      <Ionicons name="close" size={28} color={Colors.navy} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={styles.modalSubtitle}>
+                    What did you accomplish today? 🎯
+                  </Text>
+
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.modalInput}
+                      placeholder="e.g., Completed 2 LeetCode problems, updated my resume, reached out to 3 recruiters..."
+                      placeholderTextColor={Colors.mediumGray}
+                      multiline
+                      numberOfLines={5}
+                      value={progressNote}
+                      onChangeText={setProgressNote}
+                      textAlignVertical="top"
+                      autoFocus
+                    />
+                  </View>
+
+                  <Animated.View
+                    style={[
+                      styles.submitButtonContainer,
+                      { transform: [{ scale: buttonScale }] },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.modalButton,
+                        !progressNote.trim() && styles.modalButtonDisabled,
+                      ]}
+                      onPress={handleLogProgress}
+                      disabled={!progressNote.trim()}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color={Colors.white}
+                      />
+                      <Text style={styles.modalButtonText}>Log Progress</Text>
+                    </TouchableOpacity>
+                  </Animated.View>
+                </>
+              ) : (
+                <View style={styles.successContainer}>
+                  <Animated.View
+                    style={[
+                      styles.successIcon,
+                      { transform: [{ scale: successScale }] },
+                    ]}
+                  >
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={80}
+                      color={Colors.success}
+                    />
+                  </Animated.View>
+                  <Text style={styles.successTitle}>Progress Logged!</Text>
+                  <View style={styles.streakContainer}>
+                    <Animated.Text
+                      style={[
+                        styles.fireIcon,
+                        { transform: [{ scale: fireScale }] },
+                      ]}
+                    >
+                      🔥
+                    </Animated.Text>
+                    <Text style={styles.streakText}>
+                      {newStreakCount} Day Streak!
+                    </Text>
+                  </View>
+                  <Text style={styles.successSubtitle}>
+                    Keep up the amazing work! 💪
+                  </Text>
+                </View>
+              )}
             </View>
-
-            <Text style={styles.modalSubtitle}>
-              Record a quick note about your progress today:
-            </Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="e.g., Completed one LeetCode problem, spent 1 hour studying..."
-              placeholderTextColor={Colors.mediumGray}
-              multiline
-              numberOfLines={4}
-              value={progressNote}
-              onChangeText={setProgressNote}
-              textAlignVertical="top"
-              autoFocus
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.modalButton,
-                !progressNote.trim() && styles.modalButtonDisabled,
-              ]}
-              onPress={handleLogProgress}
-              disabled={!progressNote.trim()}
-            >
-              <Text style={styles.modalButtonText}>Save Progress</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -292,53 +416,139 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
+    paddingTop: 100,
   },
   modalContent: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 28,
+    paddingBottom: 48,
+    minHeight: 420,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  modalTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.navy,
   },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+  },
   modalSubtitle: {
-    fontSize: 14,
-    color: Colors.mediumGray,
-    marginBottom: 16,
+    fontSize: 16,
+    color: Colors.navy,
+    marginBottom: 24,
+    lineHeight: 22,
+    marginLeft: 60,
+  },
+  inputContainer: {
+    marginBottom: 24,
   },
   modalInput: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     fontSize: 16,
     color: Colors.navy,
-    minHeight: 120,
-    marginBottom: 16,
+    minHeight: 140,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    lineHeight: 24,
+  },
+  submitButtonContainer: {
+    marginTop: 8,
   },
   modalButton: {
     backgroundColor: Colors.success,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    shadowColor: Colors.success,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
   },
   modalButtonDisabled: {
     backgroundColor: Colors.lightGray,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   modalButtonText: {
     color: Colors.white,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  successContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  successIcon: {
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginBottom: 24,
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    marginBottom: 16,
+  },
+  fireIcon: {
+    fontSize: 40,
+    marginRight: 12,
+  },
+  streakText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.navy,
+  },
+  successSubtitle: {
     fontSize: 16,
-    fontWeight: '600',
+    color: Colors.mediumGray,
+    textAlign: 'center',
   },
 });
