@@ -10,10 +10,16 @@ import {
   TextInput,
   Dimensions,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { CareerGoal, TransitionTimeline } from '@/types';
 import { completeOnboarding } from '@/utils/storage';
@@ -37,8 +43,10 @@ const timelines: { value: TransitionTimeline; label: string }[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
   // Form data
   const [name, setName] = useState('');
@@ -52,6 +60,26 @@ export default function OnboardingScreen() {
   const totalSteps = 4;
 
   const handleNext = () => {
+    // Haptic feedback for button press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Dismiss keyboard if open
+    Keyboard.dismiss();
+
     if (currentStep < totalSteps - 1) {
       Animated.timing(scrollX, {
         toValue: -(currentStep + 1) * width,
@@ -65,6 +93,9 @@ export default function OnboardingScreen() {
   };
 
   const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Keyboard.dismiss();
+
     if (currentStep > 0) {
       Animated.timing(scrollX, {
         toValue: -(currentStep - 1) * width,
@@ -149,28 +180,35 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Progress Bar */}
-      <View style={styles.progressBarContainer}>
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${((currentStep + 1) / totalSteps) * 100}%` },
-            ]}
-          />
-        </View>
-        <Text style={styles.progressText}>
-          Step {currentStep + 1} of {totalSteps}
-        </Text>
-      </View>
-
-      {/* Content */}
-      <Animated.View
-        style={[
-          styles.contentContainer,
-          { transform: [{ translateX: scrollX }] },
-        ]}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.flex}>
+            {/* Progress Bar */}
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${((currentStep + 1) / totalSteps) * 100}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                Step {currentStep + 1} of {totalSteps}
+              </Text>
+            </View>
+
+            {/* Content */}
+            <Animated.View
+              style={[
+                styles.contentContainer,
+                { transform: [{ translateX: scrollX }] },
+              ]}
+            >
         {/* Step 1: Career Goal */}
         <View style={[styles.step, { width }]}>
           <ScrollView contentContainerStyle={styles.stepScroll}>
@@ -326,29 +364,57 @@ export default function OnboardingScreen() {
         </View>
       </Animated.View>
 
-      {/* Navigation Buttons */}
-      <View style={styles.navigationContainer}>
-        {currentStep > 0 && (
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color={Colors.navy} />
-          </TouchableOpacity>
-        )}
+            {/* Navigation Buttons */}
+            <View
+              style={[
+                styles.navigationContainer,
+                { paddingBottom: Math.max(insets.bottom, 20) + 24 },
+              ]}
+            >
+              {currentStep > 0 && (
+                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                  <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                </TouchableOpacity>
+              )}
 
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            !canProceed() && styles.nextButtonDisabled,
-            currentStep === 0 && styles.nextButtonFull,
-          ]}
-          onPress={handleNext}
-          disabled={!canProceed()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.nextButtonText}>
-            {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+              <Animated.View
+                style={[
+                  styles.nextButtonContainer,
+                  currentStep === 0 && styles.nextButtonFull,
+                  { transform: [{ scale: buttonScale }] },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.nextButton,
+                    !canProceed() && styles.nextButtonDisabled,
+                  ]}
+                  onPress={handleNext}
+                  disabled={!canProceed()}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.nextButtonText,
+                      !canProceed() && styles.nextButtonTextDisabled,
+                    ]}
+                  >
+                    {currentStep === totalSteps - 1 ? 'Get Started' : 'Continue'}
+                  </Text>
+                  {canProceed() && (
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color={Colors.white}
+                      style={styles.buttonIcon}
+                    />
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -357,6 +423,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  flex: {
+    flex: 1,
   },
   progressBarContainer: {
     paddingHorizontal: 24,
@@ -511,8 +580,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    padding: 24,
-    paddingBottom: 40,
+    paddingHorizontal: 24,
+    paddingTop: 24,
     backgroundColor: Colors.background,
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
@@ -531,11 +600,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  nextButtonContainer: {
+    flex: 1,
+  },
   nextButton: {
     flex: 1,
     backgroundColor: Colors.primary,
     borderRadius: 28,
     height: 56,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.primary,
@@ -551,11 +624,18 @@ const styles = StyleSheet.create({
   nextButtonDisabled: {
     backgroundColor: Colors.lightGray,
     shadowOpacity: 0,
+    elevation: 0,
   },
   nextButtonText: {
     color: Colors.white,
     fontSize: 18,
     fontWeight: '600',
+  },
+  nextButtonTextDisabled: {
+    color: Colors.mediumGray,
+  },
+  buttonIcon: {
+    marginLeft: 8,
   },
   loadingContainer: {
     flex: 1,
