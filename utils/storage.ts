@@ -580,3 +580,138 @@ export const extendCurrentPhase = async (additionalWeeks: number): Promise<void>
     console.error('Error extending phase:', error);
   }
 };
+
+// ==================== DEMO MODE ====================
+
+const DEMO_MODE_KEY = '@careerguide_demo_mode';
+
+/**
+ * Check if demo mode is enabled
+ */
+export const isDemoModeEnabled = async (): Promise<boolean> => {
+  try {
+    const value = await AsyncStorage.getItem(DEMO_MODE_KEY);
+    return value === 'true';
+  } catch (error) {
+    console.error('Error checking demo mode:', error);
+    return false;
+  }
+};
+
+/**
+ * Enable/disable demo mode
+ */
+export const setDemoMode = async (enabled: boolean): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DEMO_MODE_KEY, enabled.toString());
+
+    if (enabled) {
+      await populateDemoData();
+    } else {
+      await clearDemoData();
+    }
+  } catch (error) {
+    console.error('Error setting demo mode:', error);
+  }
+};
+
+/**
+ * Populate demo data for hackathon presentation
+ */
+const populateDemoData = async (): Promise<void> => {
+  try {
+    const profile = await getUserProfile();
+
+    // Backup real data
+    const realDataBackup = JSON.stringify(profile);
+    await AsyncStorage.setItem('@careerguide_real_data_backup', realDataBackup);
+
+    // Set 14-day streak
+    profile.currentStreak = 14;
+    profile.longestStreak = 14;
+    profile.lastActivityDate = new Date().toISOString();
+
+    // Unlock 3-4 badges
+    profile.badges.forEach((badge) => {
+      if (badge.type === 'first_win' || badge.type === 'week_warrior' || badge.type === 'insight_collector') {
+        badge.isUnlocked = true;
+        badge.unlockedAt = new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString();
+      }
+    });
+
+    // Create 10 sample coaching sessions (spread over past 14 days)
+    const sampleChallenges = [
+      'How do I prepare for technical interviews?',
+      'What should I include in my portfolio?',
+      'How can I effectively network on LinkedIn?',
+      'What certifications should I pursue?',
+      'How do I negotiate salary for a new role?',
+      'What are the best ways to learn new programming languages?',
+      'How can I showcase my soft skills?',
+      'What should my resume highlight for a career change?',
+      'How do I handle gaps in my employment history?',
+      'What are effective strategies for informational interviews?',
+    ];
+
+    const demoSessions: CoachingSession[] = [];
+    for (let i = 0; i < 10; i++) {
+      const daysAgo = Math.floor(Math.random() * 14);
+      const sessionDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+
+      demoSessions.push({
+        id: `demo_${Date.now()}_${i}`,
+        date: sessionDate.toISOString(),
+        challenge: sampleChallenges[i],
+        actionPlan: [
+          'Research and document 5 target companies in your desired field',
+          'Update LinkedIn profile with a compelling headline that showcases your transition',
+          'Practice your elevator pitch 10 times this week',
+          'Complete one online course module relevant to your target role',
+          'Reach out to 3 people for informational interviews',
+        ],
+        createdAt: sessionDate.getTime(),
+        progressLog: i % 3 === 0 ? 'Made great progress on this! Completed 3/5 actions.' : undefined,
+      });
+    }
+
+    // Prepend demo sessions (keep existing ones too)
+    profile.sessions = [...demoSessions, ...profile.sessions];
+
+    // Add some Monday check-ins
+    (profile as any).mondayCheckins = [
+      {
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        completion: 'all',
+        streakAdjustment: 1,
+      },
+      {
+        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+        completion: 'some',
+        streakAdjustment: 0,
+      },
+    ];
+
+    await saveUserProfile(profile);
+    console.log('✅ Demo data populated successfully');
+  } catch (error) {
+    console.error('Error populating demo data:', error);
+  }
+};
+
+/**
+ * Clear demo data and restore real data
+ */
+const clearDemoData = async (): Promise<void> => {
+  try {
+    const realDataBackup = await AsyncStorage.getItem('@careerguide_real_data_backup');
+
+    if (realDataBackup) {
+      const profile = JSON.parse(realDataBackup);
+      await saveUserProfile(profile);
+      await AsyncStorage.removeItem('@careerguide_real_data_backup');
+      console.log('✅ Real data restored');
+    }
+  } catch (error) {
+    console.error('Error clearing demo data:', error);
+  }
+};

@@ -9,12 +9,14 @@ import {
   StatusBar,
   Alert,
   Switch,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
-import { getUserProfile, clearAllData } from '@/utils/storage';
+import { getUserProfile, clearAllData, isDemoModeEnabled, setDemoMode } from '@/utils/storage';
 import { UserProfile } from '@/types';
 import ShareJourneyCard from '@/components/ShareJourneyCard';
 import * as Haptics from 'expo-haptics';
@@ -25,6 +27,10 @@ import {
   getDailyNudgeEnabled,
   setDailyNudgeEnabled,
   requestNotificationPermissions,
+  getAccountabilityTime,
+  setAccountabilityTime,
+  clearAccountabilityTime,
+  AccountabilityTime,
 } from '@/utils/notifications';
 
 export default function ProfileScreen() {
@@ -35,10 +41,17 @@ export default function ProfileScreen() {
   const [weeklyReminderEnabled, setWeeklyReminderState] = useState(false);
   const [dailyNudgeEnabled, setDailyNudgeState] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'synced' | 'syncing' | 'offline'>('synced');
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const [showAccountabilityModal, setShowAccountabilityModal] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(2); // Monday
+  const [selectedHour, setSelectedHour] = useState(18); // 6 PM
+  const [accountabilityTime, setAccountabilityTimeState] = useState<AccountabilityTime | null>(null);
 
   useEffect(() => {
     loadProfile();
     loadNotificationSettings();
+    loadDemoMode();
+    loadAccountabilityTime();
   }, []);
 
   const loadProfile = async () => {
@@ -51,6 +64,20 @@ export default function ProfileScreen() {
     const dailyEnabled = await getDailyNudgeEnabled();
     setWeeklyReminderState(weeklyEnabled);
     setDailyNudgeState(dailyEnabled);
+  };
+
+  const loadDemoMode = async () => {
+    const isDemoEnabled = await isDemoModeEnabled();
+    setDemoModeEnabled(isDemoEnabled);
+  };
+
+  const loadAccountabilityTime = async () => {
+    const time = await getAccountabilityTime();
+    setAccountabilityTimeState(time);
+    if (time) {
+      setSelectedDay(time.day);
+      setSelectedHour(time.hour);
+    }
   };
 
   const handleWeeklyReminderToggle = async (value: boolean) => {
@@ -99,6 +126,72 @@ export default function ProfileScreen() {
     if (value) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+  };
+
+  const handleDemoModeToggle = async (value: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    Alert.alert(
+      value ? 'Enable Demo Mode' : 'Disable Demo Mode',
+      value
+        ? 'This will populate your app with sample data (14-day streak, 10 sessions, unlocked badges) for demo purposes. Your real data will be safely backed up.'
+        : 'This will restore your real data.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: value ? 'Enable' : 'Disable',
+          onPress: async () => {
+            await setDemoMode(value);
+            setDemoModeEnabled(value);
+            await loadProfile(); // Reload to show demo data
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSaveAccountabilityTime = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const time: AccountabilityTime = {
+      day: selectedDay,
+      hour: selectedHour,
+      minute: 0,
+    };
+
+    await setAccountabilityTime(time);
+    setAccountabilityTimeState(time);
+    setShowAccountabilityModal(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleClearAccountabilityTime = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    Alert.alert('Clear Accountability Partner', 'Remove your weekly check-in reminder?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          await clearAccountabilityTime();
+          setAccountabilityTimeState(null);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+      },
+    ]);
+  };
+
+  const getDayName = (day: number): string => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[day - 1] || 'Monday';
+  };
+
+  const formatHour = (hour: number): string => {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}:00 ${period}`;
   };
 
   const handleSignOut = async () => {
@@ -416,6 +509,60 @@ export default function ProfileScreen() {
                 ios_backgroundColor={Colors.lightGray}
               />
             </View>
+
+            <View style={styles.notificationDivider} />
+
+            {/* Accountability Partner */}
+            <View style={styles.notificationItem}>
+              <View style={styles.notificationContent}>
+                <View style={styles.notificationHeader}>
+                  <Ionicons name="people" size={22} color={Colors.warning} />
+                  <Text style={styles.notificationTitle}>Accountability Partner</Text>
+                </View>
+                <Text style={styles.notificationSubtitle}>
+                  {accountabilityTime
+                    ? `Weekly check-in every ${getDayName(accountabilityTime.day)} at ${formatHour(accountabilityTime.hour)}`
+                    : 'Set a specific day and time for your weekly accountability check-in'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowAccountabilityModal(true)}
+                style={styles.configureButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={accountabilityTime ? 'create-outline' : 'add-circle'}
+                  size={24}
+                  color={Colors.warning}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Demo Mode */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Presentation Mode</Text>
+          <View style={styles.notificationCard}>
+            <View style={styles.notificationItem}>
+              <View style={styles.notificationContent}>
+                <View style={styles.notificationHeader}>
+                  <Ionicons name="rocket" size={22} color={Colors.info} />
+                  <Text style={styles.notificationTitle}>Demo Mode</Text>
+                </View>
+                <Text style={styles.notificationSubtitle}>
+                  Populate the app with sample data (14-day streak, 10 sessions, unlocked badges) for
+                  hackathon presentations
+                </Text>
+              </View>
+              <Switch
+                value={demoModeEnabled}
+                onValueChange={handleDemoModeToggle}
+                trackColor={{ false: Colors.lightGray, true: Colors.info + '80' }}
+                thumbColor={demoModeEnabled ? Colors.info : Colors.mediumGray}
+                ios_backgroundColor={Colors.lightGray}
+              />
+            </View>
           </View>
         </View>
 
@@ -531,6 +678,103 @@ export default function ProfileScreen() {
           <Text style={styles.footerVersion}>Version 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Accountability Partner Modal */}
+      <Modal visible={showAccountabilityModal} transparent animationType="slide">
+        <Pressable style={styles.modalOverlay} onPress={() => setShowAccountabilityModal(false)}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Set Check-in Time</Text>
+              <TouchableOpacity onPress={() => setShowAccountabilityModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.navy} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalDescription}>
+              Choose a day and time for your weekly accountability check-in
+            </Text>
+
+            {/* Day Picker */}
+            <Text style={styles.pickerLabel}>Day of Week</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayPicker}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+                <TouchableOpacity
+                  key={day}
+                  style={[
+                    styles.dayButton,
+                    selectedDay === index + 2 ? styles.dayButtonSelected : null,
+                  ]}
+                  onPress={() => {
+                    setSelectedDay(index + 2);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.dayButtonText,
+                      selectedDay === index + 2 ? styles.dayButtonTextSelected : null,
+                    ]}
+                  >
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Hour Picker */}
+            <Text style={styles.pickerLabel}>Time</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hourPicker}>
+              {Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+                <TouchableOpacity
+                  key={hour}
+                  style={[
+                    styles.hourButton,
+                    selectedHour === hour ? styles.hourButtonSelected : null,
+                  ]}
+                  onPress={() => {
+                    setSelectedHour(hour);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.hourButtonText,
+                      selectedHour === hour ? styles.hourButtonTextSelected : null,
+                    ]}
+                  >
+                    {formatHour(hour)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Action Buttons */}
+            <View style={styles.modalActions}>
+              {accountabilityTime && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={handleClearAccountabilityTime}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={20} color={Colors.error} />
+                  <Text style={styles.clearButtonText}>Remove</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveAccountabilityTime}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="checkmark-circle" size={20} color={Colors.white} />
+                <Text style={styles.saveButtonText}>Save Check-in</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -874,5 +1118,121 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.lightGray,
     marginVertical: 16,
+  },
+  configureButton: {
+    padding: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.navy,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  pickerLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.navy,
+    marginBottom: 12,
+  },
+  dayPicker: {
+    marginBottom: 24,
+  },
+  dayButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.lightGray,
+    marginRight: 8,
+  },
+  dayButtonSelected: {
+    backgroundColor: Colors.primary,
+  },
+  dayButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.mediumGray,
+  },
+  dayButtonTextSelected: {
+    color: Colors.white,
+  },
+  hourPicker: {
+    marginBottom: 24,
+  },
+  hourButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: Colors.lightGray,
+    marginRight: 8,
+  },
+  hourButtonSelected: {
+    backgroundColor: Colors.success,
+  },
+  hourButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.mediumGray,
+  },
+  hourButtonTextSelected: {
+    color: Colors.white,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  clearButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.white,
+    borderWidth: 1.5,
+    borderColor: Colors.error,
+    gap: 8,
+  },
+  clearButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.error,
+  },
+  saveButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    gap: 8,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.white,
   },
 });

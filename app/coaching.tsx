@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,12 +18,14 @@ import { useTextGeneration } from '@fastshot/ai';
 import { addCoachingSession, getUserProfile } from '@/utils/storage';
 import { CoachingSession } from '@/types';
 import { getRoadmapPlan, calculateCurrentDay, getCurrentPhase, getStrategyContext } from '@/utils/roadmap';
+import * as Haptics from 'expo-haptics';
 
 export default function CoachingScreen() {
   const router = useRouter();
   const [challenge, setChallenge] = useState('');
   const { generateText, isLoading } = useTextGeneration();
   const [pulseAnim] = useState(new Animated.Value(1));
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
     if (isLoading) {
@@ -47,6 +49,22 @@ export default function CoachingScreen() {
 
   const handleAskCoach = async () => {
     if (!challenge.trim()) return;
+
+    // Button press animation with haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     try {
       const profile = await getUserProfile();
@@ -74,18 +92,30 @@ export default function CoachingScreen() {
         }
       }
 
+      // Build phase-aware prompt with explicit phase reference requirement
+      const phaseIntro = currentPhase
+        ? `\n\nYou are currently in Phase ${currentPhase.number}: "${currentPhase.title}" of your ${profile.planName || 'transition plan'}. This phase focuses on: ${currentPhase.description}.`
+        : '';
+
+      const phaseObjectives = currentPhase
+        ? `\n\nYour Phase ${currentPhase.number} objectives are:\n${currentPhase.objectives.slice(0, 3).map((obj, i) => `${i + 1}. ${obj}`).join('\n')}\n`
+        : '';
+
       const prompt = `You are an expert career coach. Help ${roleContext} ${experienceContext} who wants to ${profile.careerGoal}.
+${phaseIntro}
+${phaseContext ? `\nSTRATEGIC CONTEXT: ${phaseContext}` : ''}${phaseObjectives}
+They are facing this challenge: "${challenge}"
 
-${phaseContext ? `IMPORTANT CONTEXT: ${phaseContext}\n\n` : ''}They are facing this challenge: "${challenge}"
-
-Based on their background as a ${profile.currentRole || 'professional'}${currentPhase ? ` and their current roadmap phase (Phase ${currentPhase.number}: ${currentPhase.title})` : ''}, provide 3-5 specific, actionable steps they can take this week. Focus on:
+Provide 3-5 specific, actionable steps they can take this week. Focus on:
 - Leveraging their existing skills and experience
 - Concrete actions they can start immediately
 - Time-bound activities (specify when to do it)
 - Clear outcomes they'll achieve
-${currentPhase ? `- Actions aligned with their current phase objectives: ${currentPhase.objectives.slice(0, 3).join(', ')}` : ''}
+${currentPhase ? `- Activities that directly advance Phase ${currentPhase.number} objectives` : ''}
 
-Format your response as a numbered list with clear, concise bullet points. Each step should be one sentence. Do not include any introductory text, just the numbered action steps.`;
+CRITICAL REQUIREMENT: Your FIRST action step MUST explicitly mention "Phase ${currentPhase?.number}: ${currentPhase?.title}" and reference at least one of their phase objectives. For example: "For Phase ${currentPhase?.number}: ${currentPhase?.title}, ${currentPhase?.objectives[0]?.toLowerCase() || 'focus on your key objective'}..."
+
+Format your response as a numbered list with clear, concise action steps. Each step should be specific and actionable. Do not include any introductory text, just the numbered action steps starting with the phase-specific action.`;
 
       const response = await generateText(prompt);
 
@@ -157,17 +187,25 @@ Format your response as a numbered list with clear, concise bullet points. Each 
                 />
               </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  !challenge.trim() && styles.submitButtonDisabled,
-                ]}
-                onPress={handleAskCoach}
-                disabled={!challenge.trim()}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.submitButtonText}>Ask Newell Coach</Text>
-              </TouchableOpacity>
+              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                <TouchableOpacity
+                  style={[
+                    styles.submitButton,
+                    !challenge.trim() && styles.submitButtonDisabled,
+                  ]}
+                  onPress={handleAskCoach}
+                  disabled={!challenge.trim()}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="rocket"
+                    size={20}
+                    color={Colors.white}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={styles.submitButtonText}>Ask Newell Coach</Text>
+                </TouchableOpacity>
+              </Animated.View>
 
               <Text style={styles.footer}>Powered by built-in Newell AI.</Text>
             </>
@@ -266,6 +304,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

@@ -73,7 +73,7 @@ export default function MondayCheckinModal({
             </View>
             <Text style={styles.title}>Monday Check-In! 📅</Text>
             <Text style={styles.subtitle}>
-              How did you do on last week's tasks?
+              How did you do on last week&apos;s tasks?
             </Text>
           </View>
 

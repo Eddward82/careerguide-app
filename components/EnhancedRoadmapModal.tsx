@@ -202,7 +202,7 @@ export default function EnhancedRoadmapModal({
                         <View style={styles.currentWeekBadge}>
                           <Ionicons name="calendar" size={16} color="#4A90E2" />
                           <Text style={styles.currentWeekText}>
-                            You're in Week {currentWeek}
+                            You&apos;re in Week {currentWeek}
                           </Text>
                         </View>
                       )}

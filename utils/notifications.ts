@@ -269,3 +269,93 @@ export async function markResourceVisited(): Promise<void> {
     console.error('Error marking resource visited:', error);
   }
 }
+
+// ==================== ACCOUNTABILITY PARTNER ====================
+
+const ACCOUNTABILITY_TIME_KEY = '@accountabilityTime';
+
+export interface AccountabilityTime {
+  day: number; // 1 = Monday, 2 = Tuesday, ... 7 = Sunday
+  hour: number;
+  minute: number;
+}
+
+/**
+ * Get accountability partner check-in time
+ */
+export async function getAccountabilityTime(): Promise<AccountabilityTime | null> {
+  try {
+    const value = await AsyncStorage.getItem(ACCOUNTABILITY_TIME_KEY);
+    return value ? JSON.parse(value) : null;
+  } catch (error) {
+    console.error('Error getting accountability time:', error);
+    return null;
+  }
+}
+
+/**
+ * Set accountability partner check-in time and schedule notification
+ */
+export async function setAccountabilityTime(time: AccountabilityTime): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ACCOUNTABILITY_TIME_KEY, JSON.stringify(time));
+
+    // Request permissions first
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) {
+      console.log('⚠️ Notification permissions not granted');
+      return;
+    }
+
+    // Cancel any existing accountability notifications
+    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notification of allNotifications) {
+      if (notification.content.title?.includes('Weekly Check-in')) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      }
+    }
+
+    // Schedule new accountability notification
+    const profile = await getUserProfile();
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${profile.name}, it's Weekly Check-in Time! 📋`,
+        body: 'Take a moment to reflect on your progress and set goals for the week ahead.',
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+        weekday: time.day,
+        hour: time.hour,
+        minute: time.minute,
+        repeats: true,
+      },
+    });
+
+    console.log('✅ Accountability check-in scheduled:', notificationId);
+  } catch (error) {
+    console.error('Error setting accountability time:', error);
+  }
+}
+
+/**
+ * Clear accountability partner check-in
+ */
+export async function clearAccountabilityTime(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(ACCOUNTABILITY_TIME_KEY);
+
+    // Cancel accountability notifications
+    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notification of allNotifications) {
+      if (notification.content.title?.includes('Weekly Check-in')) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      }
+    }
+
+    console.log('✅ Accountability check-in cleared');
+  } catch (error) {
+    console.error('Error clearing accountability time:', error);
+  }
+}
