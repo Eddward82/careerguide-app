@@ -384,3 +384,199 @@ export const clearAllData = async (): Promise<void> => {
     console.error('Error clearing data:', error);
   }
 };
+
+// ==================== ROADMAP PROGRESS TRACKING ====================
+
+// Store roadmap task completion state
+export const updateRoadmapTaskCompletion = async (
+  taskId: string,
+  isCompleted: boolean
+): Promise<void> => {
+  try {
+    const profile = await getUserProfile();
+
+    // Store task completion in a new field
+    if (!profile.roadmapTasksCompleted) {
+      (profile as any).roadmapTasksCompleted = {};
+    }
+
+    (profile as any).roadmapTasksCompleted[taskId] = isCompleted;
+
+    await saveUserProfile(profile);
+  } catch (error) {
+    console.error('Error updating task completion:', error);
+  }
+};
+
+// Get roadmap task completion state
+export const getRoadmapTasksCompleted = async (): Promise<Record<string, boolean>> => {
+  try {
+    const profile = await getUserProfile();
+    return (profile as any).roadmapTasksCompleted || {};
+  } catch (error) {
+    console.error('Error getting task completion:', error);
+    return {};
+  }
+};
+
+// Store Monday check-in response
+export interface MondayCheckin {
+  date: string;
+  completion: 'all' | 'some' | 'none';
+  streakAdjustment: number;
+}
+
+export const saveMondayCheckin = async (
+  completion: 'all' | 'some' | 'none'
+): Promise<void> => {
+  try {
+    const profile = await getUserProfile();
+
+    // Initialize checkin history if it doesn't exist
+    if (!(profile as any).mondayCheckins) {
+      (profile as any).mondayCheckins = [];
+    }
+
+    const checkin: MondayCheckin = {
+      date: new Date().toISOString(),
+      completion,
+      streakAdjustment: completion === 'all' ? 1 : completion === 'some' ? 0 : -1,
+    };
+
+    (profile as any).mondayCheckins.push(checkin);
+
+    // Adjust streak based on completion
+    if (completion === 'all') {
+      profile.currentStreak += 1;
+      if (profile.currentStreak > (profile.longestStreak || 0)) {
+        profile.longestStreak = profile.currentStreak;
+      }
+    } else if (completion === 'none') {
+      // Reset streak but show encouragement
+      profile.currentStreak = Math.max(0, profile.currentStreak - 1);
+    }
+    // 'some' keeps streak as is
+
+    await saveUserProfile(profile);
+  } catch (error) {
+    console.error('Error saving Monday checkin:', error);
+  }
+};
+
+// Check if user should see Monday check-in
+export const shouldShowMondayCheckin = async (): Promise<boolean> => {
+  try {
+    const profile = await getUserProfile();
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+    // Only show on Mondays
+    if (dayOfWeek !== 1) {
+      return false;
+    }
+
+    // Check if user has already checked in today
+    const mondayCheckins = (profile as any).mondayCheckins || [];
+    const today = now.toISOString().split('T')[0];
+
+    const hasCheckedInToday = mondayCheckins.some((checkin: MondayCheckin) => {
+      const checkinDate = new Date(checkin.date).toISOString().split('T')[0];
+      return checkinDate === today;
+    });
+
+    return !hasCheckedInToday;
+  } catch (error) {
+    console.error('Error checking Monday checkin status:', error);
+    return false;
+  }
+};
+
+// Store phase completion
+export const markPhaseCompleted = async (
+  phaseNumber: number,
+  planName: string
+): Promise<void> => {
+  try {
+    const profile = await getUserProfile();
+
+    // Initialize completed phases if it doesn't exist
+    if (!(profile as any).completedPhases) {
+      (profile as any).completedPhases = [];
+    }
+
+    const completionRecord = {
+      phaseNumber,
+      planName,
+      completedAt: new Date().toISOString(),
+    };
+
+    // Only add if not already marked
+    const alreadyCompleted = (profile as any).completedPhases.some(
+      (p: any) => p.phaseNumber === phaseNumber && p.planName === planName
+    );
+
+    if (!alreadyCompleted) {
+      (profile as any).completedPhases.push(completionRecord);
+      await saveUserProfile(profile);
+    }
+  } catch (error) {
+    console.error('Error marking phase completed:', error);
+  }
+};
+
+// Check if phase completion should be shown
+export const shouldShowPhaseCompletion = async (
+  phaseNumber: number,
+  planName: string
+): Promise<boolean> => {
+  try {
+    const profile = await getUserProfile();
+    const completedPhases = (profile as any).completedPhases || [];
+
+    return !completedPhases.some(
+      (p: any) => p.phaseNumber === phaseNumber && p.planName === planName
+    );
+  } catch (error) {
+    console.error('Error checking phase completion status:', error);
+    return false;
+  }
+};
+
+// Adjust timeline (extend or accelerate)
+export const adjustTimeline = async (
+  newTimeline: TransitionTimeline
+): Promise<void> => {
+  try {
+    const profile = await getUserProfile();
+    profile.transitionTimeline = newTimeline;
+
+    // Reset start date to today to reflect the new timeline
+    profile.planStartDate = new Date().toISOString();
+
+    await saveUserProfile(profile);
+  } catch (error) {
+    console.error('Error adjusting timeline:', error);
+  }
+};
+
+// Extend current phase by weeks
+export const extendCurrentPhase = async (additionalWeeks: number): Promise<void> => {
+  try {
+    const profile = await getUserProfile();
+
+    // Initialize phase extensions if it doesn't exist
+    if (!(profile as any).phaseExtensions) {
+      (profile as any).phaseExtensions = {};
+    }
+
+    // Get current phase number (simplified - you may want to use getCurrentPhase from roadmap.ts)
+    const currentPhaseNumber = 1; // This should be calculated based on currentDay
+
+    const existingExtension = (profile as any).phaseExtensions[currentPhaseNumber] || 0;
+    (profile as any).phaseExtensions[currentPhaseNumber] = existingExtension + additionalWeeks;
+
+    await saveUserProfile(profile);
+  } catch (error) {
+    console.error('Error extending phase:', error);
+  }
+};

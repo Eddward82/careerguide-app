@@ -7,12 +7,20 @@ export interface RoadmapPlan {
   phases: RoadmapPhase[];
 }
 
+export interface PhaseTask {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+}
+
 export interface RoadmapPhase {
   number: number;
   title: string;
   weeks: string;
   description: string;
   objectives: string[];
+  tasks: PhaseTask[];
+  motivationalMessage: string;
 }
 
 /**
@@ -38,6 +46,14 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
               'Create a compelling elevator pitch for your career pivot',
               'Set up job search alerts on 3+ platforms',
             ],
+            tasks: [
+              { id: '1-3m-p1-t1', text: 'Complete LinkedIn profile audit and update headline', isCompleted: false },
+              { id: '1-3m-p1-t2', text: 'Rewrite resume with quantified achievements', isCompleted: false },
+              { id: '1-3m-p1-t3', text: 'Identify 3-5 target companies and research their culture', isCompleted: false },
+              { id: '1-3m-p1-t4', text: 'Practice 60-second elevator pitch 10 times', isCompleted: false },
+              { id: '1-3m-p1-t5', text: 'Set up job alerts on LinkedIn, Indeed, and Glassdoor', isCompleted: false },
+            ],
+            motivationalMessage: "🚀 This is your launch week! You're laying the groundwork for an incredible transformation. Every small step you take now compounds into massive results.",
           },
           {
             number: 2,
@@ -52,6 +68,13 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
               'Conduct 3-5 informational interviews',
               'Publish 1-2 LinkedIn posts showcasing your expertise',
             ],
+            tasks: [
+              { id: '1-3m-p2-t1', text: 'Reach out to 20+ professionals with personalized messages', isCompleted: false },
+              { id: '1-3m-p2-t2', text: 'Complete one industry-relevant certification', isCompleted: false },
+              { id: '1-3m-p2-t3', text: 'Build one portfolio project showcasing key skills', isCompleted: false },
+              { id: '1-3m-p2-t4', text: 'Conduct 3 informational interviews', isCompleted: false },
+            ],
+            motivationalMessage: "💪 You're building momentum! Each connection, each skill learned, each project completed is adding to your career capital. Keep pushing forward!",
           },
           {
             number: 3,
@@ -66,6 +89,14 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
               'Follow up with all networking contacts',
               'Negotiate offers and evaluate opportunities',
             ],
+            tasks: [
+              { id: '1-3m-p3-t1', text: 'Apply to 50+ targeted positions with customized materials', isCompleted: false },
+              { id: '1-3m-p3-t2', text: 'Practice answers to 20 common interview questions', isCompleted: false },
+              { id: '1-3m-p3-t3', text: 'Prepare 3 STAR method success stories', isCompleted: false },
+              { id: '1-3m-p3-t4', text: 'Follow up with all connections and informational interviewees', isCompleted: false },
+              { id: '1-3m-p3-t5', text: 'Secure at least 2 interviews', isCompleted: false },
+            ],
+            motivationalMessage: "🎯 The finish line is in sight! Your hard work is about to pay off. Stay focused, stay confident, and remember: you've earned your place at the table.",
           },
         ],
       };
@@ -78,47 +109,113 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
         phases: [
           {
             number: 1,
-            title: 'Foundation',
-            weeks: 'Weeks 1-6',
+            title: 'Foundation & Assessment',
+            weeks: 'Weeks 1-4',
             description: 'Build your foundation and brand',
             objectives: [
               'Complete comprehensive skills gap analysis',
               'Update LinkedIn with professional headline and summary',
               'Research 10-15 target companies in your desired field',
-              'Create a personalized career transition roadmap',
-              'Build initial portfolio or personal website',
-              'Identify and reach out to 3-5 potential mentors',
             ],
+            tasks: [
+              { id: '3-6m-p1-t1', text: 'Complete skills gap analysis worksheet', isCompleted: false },
+              { id: '3-6m-p1-t2', text: 'Revamp LinkedIn profile with compelling headline and summary', isCompleted: false },
+              { id: '3-6m-p1-t3', text: 'Research and document 10 target companies', isCompleted: false },
+              { id: '3-6m-p1-t4', text: 'Create career transition vision board', isCompleted: false },
+            ],
+            motivationalMessage: "🎯 You're starting strong! Taking time to assess and plan is the hallmark of successful career transitions. This foundation will guide everything that follows.",
           },
           {
             number: 2,
-            title: 'Skill Building',
-            weeks: 'Weeks 7-16',
-            description: 'Strategic upskilling and networking',
+            title: 'Brand Building',
+            weeks: 'Weeks 5-8',
+            description: 'Establish your personal brand',
             objectives: [
-              'Complete 2-3 relevant online courses or certifications',
-              'Work on 2-3 portfolio projects demonstrating new skills',
-              'Attend weekly networking events or industry meetups',
-              'Conduct 10-15 informational interviews',
-              'Start contributing to industry discussions on LinkedIn',
-              'Join 2-3 professional communities or Slack groups',
-              'Document your learning journey publicly',
+              'Build initial portfolio or personal website',
+              'Identify and reach out to 3-5 potential mentors',
+              'Start documenting your transition journey',
             ],
+            tasks: [
+              { id: '3-6m-p2-t1', text: 'Launch personal website or portfolio', isCompleted: false },
+              { id: '3-6m-p2-t2', text: 'Write and publish first LinkedIn article about your transition', isCompleted: false },
+              { id: '3-6m-p2-t3', text: 'Connect with 5 potential mentors', isCompleted: false },
+              { id: '3-6m-p2-t4', text: 'Develop personal brand statement', isCompleted: false },
+            ],
+            motivationalMessage: "✨ Your brand is taking shape! Every piece of content you create, every connection you make is building your reputation in your new field.",
           },
           {
             number: 3,
-            title: 'Market Positioning',
-            weeks: 'Weeks 17-24',
-            description: 'Active job search and interviews',
+            title: 'Skill Development',
+            weeks: 'Weeks 9-14',
+            description: 'Strategic upskilling and learning',
             objectives: [
-              'Launch active job search with 10-15 applications weekly',
-              'Tailor resume and cover letter for each position',
+              'Complete 2-3 relevant online courses or certifications',
+              'Work on 2-3 portfolio projects demonstrating new skills',
+              'Join 2-3 professional communities or Slack groups',
+            ],
+            tasks: [
+              { id: '3-6m-p3-t1', text: 'Complete 2 industry certifications', isCompleted: false },
+              { id: '3-6m-p3-t2', text: 'Build 2 portfolio projects', isCompleted: false },
+              { id: '3-6m-p3-t3', text: 'Join 3 professional communities', isCompleted: false },
+              { id: '3-6m-p3-t4', text: 'Document learning journey with weekly posts', isCompleted: false },
+            ],
+            motivationalMessage: "📚 You're in the growth zone! This is where the magic happens. Every skill you master brings you closer to your dream role.",
+          },
+          {
+            number: 4,
+            title: 'Network Expansion',
+            weeks: 'Weeks 15-18',
+            description: 'Active networking and relationship building',
+            objectives: [
+              'Attend weekly networking events or industry meetups',
+              'Conduct 10-15 informational interviews',
+              'Start contributing to industry discussions on LinkedIn',
+            ],
+            tasks: [
+              { id: '3-6m-p4-t1', text: 'Attend 8+ industry events or webinars', isCompleted: false },
+              { id: '3-6m-p4-t2', text: 'Complete 10 informational interviews', isCompleted: false },
+              { id: '3-6m-p4-t3', text: 'Publish 8 LinkedIn posts/comments', isCompleted: false },
+              { id: '3-6m-p4-t4', text: 'Build list of 50+ warm connections', isCompleted: false },
+            ],
+            motivationalMessage: "🤝 Your network is your net worth! The relationships you're building now will open doors you didn't even know existed.",
+          },
+          {
+            number: 5,
+            title: 'Market Positioning',
+            weeks: 'Weeks 19-22',
+            description: 'Prepare for job market entry',
+            objectives: [
               'Prepare comprehensive interview prep document',
               'Practice mock interviews with peers or mentors',
               'Build relationships with recruiters in target industry',
+            ],
+            tasks: [
+              { id: '3-6m-p5-t1', text: 'Create master interview prep document', isCompleted: false },
+              { id: '3-6m-p5-t2', text: 'Complete 3 mock interviews', isCompleted: false },
+              { id: '3-6m-p5-t3', text: 'Connect with 10 recruiters', isCompleted: false },
+              { id: '3-6m-p5-t4', text: 'Prepare portfolio presentation', isCompleted: false },
+            ],
+            motivationalMessage: "💼 You're ready for this! All your preparation has led to this moment. Walk into every conversation with confidence—you've earned it.",
+          },
+          {
+            number: 6,
+            title: 'Active Job Search',
+            weeks: 'Weeks 23-26',
+            description: 'Launch applications and secure offers',
+            objectives: [
+              'Launch active job search with 10-15 applications weekly',
+              'Tailor resume and cover letter for each position',
               'Showcase completed projects and certifications',
               'Negotiate multiple offers strategically',
             ],
+            tasks: [
+              { id: '3-6m-p6-t1', text: 'Submit 40+ targeted applications', isCompleted: false },
+              { id: '3-6m-p6-t2', text: 'Customize materials for each application', isCompleted: false },
+              { id: '3-6m-p6-t3', text: 'Secure 5+ interviews', isCompleted: false },
+              { id: '3-6m-p6-t4', text: 'Practice salary negotiation tactics', isCompleted: false },
+              { id: '3-6m-p6-t5', text: 'Evaluate and accept best offer', isCompleted: false },
+            ],
+            motivationalMessage: "🏆 This is it—your moment to shine! Trust your preparation, showcase your value, and step into the career you've worked so hard to build.",
           },
         ],
       };
@@ -131,63 +228,148 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
         phases: [
           {
             number: 1,
-            title: 'Foundation',
-            weeks: 'Weeks 1-12',
-            description: 'Deep skill development and planning',
+            title: 'Deep Foundation',
+            weeks: 'Weeks 1-8',
+            description: 'Strategic planning and foundation',
             objectives: [
               'Create detailed 12-month learning curriculum',
               'Enroll in comprehensive certification programs',
               'Set up structured learning schedule (10-15 hrs/week)',
-              'Build foundational knowledge through courses and books',
-              'Start documenting learning journey via blog or Medium',
-              'Connect with 5-10 mentors and industry experts',
-              'Establish clear success metrics for your transition',
             ],
+            tasks: [
+              { id: '6-12m-p1-t1', text: 'Design comprehensive 12-month learning plan', isCompleted: false },
+              { id: '6-12m-p1-t2', text: 'Enroll in 3-4 certification programs', isCompleted: false },
+              { id: '6-12m-p1-t3', text: 'Block out 10-15 hours weekly for learning', isCompleted: false },
+              { id: '6-12m-p1-t4', text: 'Set measurable success milestones', isCompleted: false },
+            ],
+            motivationalMessage: "🌱 You're planting seeds for long-term success. This deep work now will compound into extraordinary results. Trust the process.",
           },
           {
             number: 2,
-            title: 'Growth',
-            weeks: 'Weeks 13-32',
-            description: 'Certifications and portfolio building',
+            title: 'Knowledge Building',
+            weeks: 'Weeks 9-16',
+            description: 'Intensive learning and skill acquisition',
             objectives: [
-              'Complete 3-5 professional certifications',
-              'Build 5-7 substantial portfolio projects',
-              'Contribute to open source or community projects',
-              'Attend industry conferences and workshops',
-              'Develop specialized expertise in niche area',
-              'Create case studies showcasing your work',
-              'Publish 1-2 articles or tutorials monthly',
+              'Build foundational knowledge through courses and books',
+              'Start documenting learning journey via blog or Medium',
+              'Connect with 5-10 mentors and industry experts',
             ],
+            tasks: [
+              { id: '6-12m-p2-t1', text: 'Complete 2 foundational courses', isCompleted: false },
+              { id: '6-12m-p2-t2', text: 'Read 5 industry-relevant books', isCompleted: false },
+              { id: '6-12m-p2-t3', text: 'Start weekly blog documenting journey', isCompleted: false },
+              { id: '6-12m-p2-t4', text: 'Connect with 10 industry mentors', isCompleted: false },
+            ],
+            motivationalMessage: "📖 Knowledge is power! Every hour invested in learning is multiplying your career capital exponentially.",
           },
           {
             number: 3,
-            title: 'Brand Building',
-            weeks: 'Weeks 33-44',
-            description: 'Thought leadership and community',
+            title: 'Certification Sprint',
+            weeks: 'Weeks 17-24',
+            description: 'Professional certifications and credentials',
             objectives: [
-              'Launch personal brand website or portfolio',
-              'Speak at meetups or virtual events (2-3 times)',
-              'Write comprehensive guides or tutorials',
-              'Build engaged following on LinkedIn (500+ connections)',
-              'Participate actively in industry communities',
-              'Create video content or podcast appearances',
-              'Establish yourself as go-to resource in your niche',
+              'Complete 3-5 professional certifications',
+              'Develop specialized expertise in niche area',
             ],
+            tasks: [
+              { id: '6-12m-p3-t1', text: 'Complete 3 professional certifications', isCompleted: false },
+              { id: '6-12m-p3-t2', text: 'Pass all certification exams', isCompleted: false },
+              { id: '6-12m-p3-t3', text: 'Update LinkedIn with credentials', isCompleted: false },
+              { id: '6-12m-p3-t4', text: 'Identify specialization niche', isCompleted: false },
+            ],
+            motivationalMessage: "🏅 Your credentials are stacking up! Each certification validates your expertise and opens new doors.",
           },
           {
             number: 4,
-            title: 'Transition',
-            weeks: 'Weeks 45-52',
-            description: 'Strategic job search and offers',
+            title: 'Portfolio Development',
+            weeks: 'Weeks 25-32',
+            description: 'Build substantial project portfolio',
+            objectives: [
+              'Build 5-7 substantial portfolio projects',
+              'Contribute to open source or community projects',
+              'Create case studies showcasing your work',
+            ],
+            tasks: [
+              { id: '6-12m-p4-t1', text: 'Complete 5 portfolio projects', isCompleted: false },
+              { id: '6-12m-p4-t2', text: 'Contribute to 3 open source projects', isCompleted: false },
+              { id: '6-12m-p4-t3', text: 'Write 3 detailed case studies', isCompleted: false },
+              { id: '6-12m-p4-t4', text: 'Publish projects on GitHub/portfolio site', isCompleted: false },
+            ],
+            motivationalMessage: "🛠️ You're building proof of your abilities! These projects are your ticket to standout applications.",
+          },
+          {
+            number: 5,
+            title: 'Community Engagement',
+            weeks: 'Weeks 33-40',
+            description: 'Networking and content creation',
+            objectives: [
+              'Attend industry conferences and workshops',
+              'Publish 1-2 articles or tutorials monthly',
+              'Participate actively in industry communities',
+            ],
+            tasks: [
+              { id: '6-12m-p5-t1', text: 'Attend 4 conferences or workshops', isCompleted: false },
+              { id: '6-12m-p5-t2', text: 'Publish 8 articles or tutorials', isCompleted: false },
+              { id: '6-12m-p5-t3', text: 'Join and contribute to 5 communities', isCompleted: false },
+              { id: '6-12m-p5-t4', text: 'Build network of 100+ connections', isCompleted: false },
+            ],
+            motivationalMessage: "🌐 You're becoming a recognized voice! Your contributions are building your reputation as an expert.",
+          },
+          {
+            number: 6,
+            title: 'Brand Establishment',
+            weeks: 'Weeks 41-46',
+            description: 'Thought leadership and visibility',
+            objectives: [
+              'Launch personal brand website or portfolio',
+              'Speak at meetups or virtual events (2-3 times)',
+              'Build engaged following on LinkedIn (500+ connections)',
+            ],
+            tasks: [
+              { id: '6-12m-p6-t1', text: 'Launch professional portfolio website', isCompleted: false },
+              { id: '6-12m-p6-t2', text: 'Deliver 3 talks or presentations', isCompleted: false },
+              { id: '6-12m-p6-t3', text: 'Grow LinkedIn to 500+ connections', isCompleted: false },
+              { id: '6-12m-p6-t4', text: 'Create signature content series', isCompleted: false },
+            ],
+            motivationalMessage: "💫 Your brand is shining! People are starting to recognize your name and expertise in the field.",
+          },
+          {
+            number: 7,
+            title: 'Thought Leadership',
+            weeks: 'Weeks 47-50',
+            description: 'Advanced content and influence',
+            objectives: [
+              'Write comprehensive guides or tutorials',
+              'Create video content or podcast appearances',
+              'Establish yourself as go-to resource in your niche',
+            ],
+            tasks: [
+              { id: '6-12m-p7-t1', text: 'Publish comprehensive guide or mini-course', isCompleted: false },
+              { id: '6-12m-p7-t2', text: 'Appear on 2 podcasts or webinars', isCompleted: false },
+              { id: '6-12m-p7-t3', text: 'Create video tutorial series', isCompleted: false },
+              { id: '6-12m-p7-t4', text: 'Get featured in industry publication', isCompleted: false },
+            ],
+            motivationalMessage: "🎤 You're a thought leader now! Your insights are shaping conversations in your industry.",
+          },
+          {
+            number: 8,
+            title: 'Strategic Transition',
+            weeks: 'Weeks 51-52',
+            description: 'Leverage expertise for premium opportunities',
             objectives: [
               'Leverage network for warm introductions to opportunities',
               'Target senior or specialized roles matching expertise',
               'Showcase comprehensive portfolio during interviews',
-              'Demonstrate thought leadership and industry knowledge',
               'Negotiate premium compensation packages',
-              'Evaluate cultural fit and long-term growth potential',
-              'Plan smooth transition and onboarding strategy',
             ],
+            tasks: [
+              { id: '6-12m-p8-t1', text: 'Activate network for warm introductions', isCompleted: false },
+              { id: '6-12m-p8-t2', text: 'Apply to 20 premium positions', isCompleted: false },
+              { id: '6-12m-p8-t3', text: 'Secure 5+ interviews at target companies', isCompleted: false },
+              { id: '6-12m-p8-t4', text: 'Negotiate and accept optimal offer', isCompleted: false },
+              { id: '6-12m-p8-t5', text: 'Plan 90-day impact strategy for new role', isCompleted: false },
+            ],
+            motivationalMessage: "👑 You've earned this! Walk into these conversations as the expert you've become. Your year of dedication has prepared you for this moment.",
           },
         ],
       };
@@ -200,63 +382,178 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
         phases: [
           {
             number: 1,
-            title: 'Strategic Foundation',
-            weeks: 'Months 1-4',
-            description: 'Long-term skill mapping and planning',
+            title: 'Strategic Vision',
+            weeks: 'Months 1-2',
+            description: 'Comprehensive career architecture',
             objectives: [
               'Conduct extensive market research and skill mapping',
               'Create comprehensive 18-month development plan',
               'Identify multiple career paths and specializations',
-              'Build relationships with 10+ industry leaders',
-              'Enroll in degree program or advanced certifications',
-              'Establish long-term learning partnerships',
-              'Set up systems for continuous skill development',
             ],
+            tasks: [
+              { id: '12m+-p1-t1', text: 'Complete extensive industry research and skill gap analysis', isCompleted: false },
+              { id: '12m+-p1-t2', text: 'Design 18-month strategic roadmap', isCompleted: false },
+              { id: '12m+-p1-t3', text: 'Identify 3 potential career paths', isCompleted: false },
+              { id: '12m+-p1-t4', text: 'Set quarterly success metrics', isCompleted: false },
+            ],
+            motivationalMessage: "🎯 You're thinking long-term—that's the mindset of winners! This strategic approach will position you for extraordinary success.",
           },
           {
             number: 2,
-            title: 'Deep Learning',
-            weeks: 'Months 5-10',
-            description: 'Advanced certifications and projects',
+            title: 'Relationship Foundation',
+            weeks: 'Months 3-4',
+            description: 'Build influential network',
             objectives: [
-              'Complete advanced degree or professional certifications',
-              'Master specialized tools and methodologies',
-              'Build 8-10 complex portfolio projects',
-              'Publish research papers or in-depth case studies',
-              'Mentor others in your previous field',
-              'Develop proprietary frameworks or methodologies',
-              'Create comprehensive body of work demonstrating expertise',
+              'Build relationships with 10+ industry leaders',
+              'Establish long-term learning partnerships',
             ],
+            tasks: [
+              { id: '12m+-p2-t1', text: 'Connect with 15 industry leaders', isCompleted: false },
+              { id: '12m+-p2-t2', text: 'Secure 2-3 long-term mentors', isCompleted: false },
+              { id: '12m+-p2-t3', text: 'Join 5 professional associations', isCompleted: false },
+              { id: '12m+-p2-t4', text: 'Attend 3 exclusive networking events', isCompleted: false },
+            ],
+            motivationalMessage: "🤝 The relationships you're building now are the foundation of your future success. Invest deeply in authentic connections.",
           },
           {
             number: 3,
-            title: 'Industry Positioning',
-            weeks: 'Months 11-14',
-            description: 'Thought leadership and influence',
+            title: 'Academic Excellence',
+            weeks: 'Months 5-7',
+            description: 'Advanced education and credentials',
             objectives: [
-              'Establish strong personal brand and online presence',
-              'Speak at major industry conferences (3-5 times)',
-              'Publish book, course, or comprehensive guide',
-              'Build substantial LinkedIn following (1000+ connections)',
-              'Appear on podcasts and industry publications',
-              'Create viral content demonstrating expertise',
-              'Build reputation as industry expert and innovator',
+              'Enroll in degree program or advanced certifications',
+              'Set up systems for continuous skill development',
             ],
+            tasks: [
+              { id: '12m+-p3-t1', text: 'Enroll in advanced degree or certificate program', isCompleted: false },
+              { id: '12m+-p3-t2', text: 'Complete first semester/module with excellence', isCompleted: false },
+              { id: '12m+-p3-t3', text: 'Build structured learning system (15+ hrs/week)', isCompleted: false },
+              { id: '12m+-p3-t4', text: 'Achieve top 10% performance in courses', isCompleted: false },
+            ],
+            motivationalMessage: "📚 Academic excellence is your competitive advantage! You're building credentials that will set you apart for decades.",
           },
           {
             number: 4,
-            title: 'Strategic Transition',
-            weeks: 'Months 15-18',
-            description: 'Selective opportunities and offers',
+            title: 'Mastery Development',
+            weeks: 'Months 8-10',
+            description: 'Deep skill mastery',
+            objectives: [
+              'Master specialized tools and methodologies',
+              'Develop proprietary frameworks or methodologies',
+            ],
+            tasks: [
+              { id: '12m+-p4-t1', text: 'Master 5 specialized tools/platforms', isCompleted: false },
+              { id: '12m+-p4-t2', text: 'Develop unique methodology or framework', isCompleted: false },
+              { id: '12m+-p4-t3', text: 'Document mastery through tutorials', isCompleted: false },
+              { id: '12m+-p4-t4', text: 'Receive recognition from peers', isCompleted: false },
+            ],
+            motivationalMessage: "⚡ You're reaching mastery level! This depth of expertise is what transforms careers from good to exceptional.",
+          },
+          {
+            number: 5,
+            title: 'Portfolio Excellence',
+            weeks: 'Months 11-13',
+            description: 'Build world-class portfolio',
+            objectives: [
+              'Build 8-10 complex portfolio projects',
+              'Create comprehensive body of work demonstrating expertise',
+            ],
+            tasks: [
+              { id: '12m+-p5-t1', text: 'Complete 8 advanced portfolio projects', isCompleted: false },
+              { id: '12m+-p5-t2', text: 'Publish projects with detailed documentation', isCompleted: false },
+              { id: '12m+-p5-t3', text: 'Get projects featured in industry publications', isCompleted: false },
+              { id: '12m+-p5-t4', text: 'Create video walkthroughs of key projects', isCompleted: false },
+            ],
+            motivationalMessage: "🏗️ Your portfolio is becoming legendary! This body of work will speak louder than any resume ever could.",
+          },
+          {
+            number: 6,
+            title: 'Thought Leadership Launch',
+            weeks: 'Months 14-15',
+            description: 'Publish original insights',
+            objectives: [
+              'Publish research papers or in-depth case studies',
+              'Publish book, course, or comprehensive guide',
+            ],
+            tasks: [
+              { id: '12m+-p6-t1', text: 'Publish 3 in-depth research articles', isCompleted: false },
+              { id: '12m+-p6-t2', text: 'Launch comprehensive online course or guide', isCompleted: false },
+              { id: '12m+-p6-t3', text: 'Get published in major industry publication', isCompleted: false },
+              { id: '12m+-p6-t4', text: 'Receive 1000+ views on published content', isCompleted: false },
+            ],
+            motivationalMessage: "✍️ Your voice matters! The insights you're sharing are positioning you as a true industry authority.",
+          },
+          {
+            number: 7,
+            title: 'Public Speaking & Visibility',
+            weeks: 'Months 16',
+            description: 'Stage presence and influence',
+            objectives: [
+              'Speak at major industry conferences (3-5 times)',
+              'Appear on podcasts and industry publications',
+            ],
+            tasks: [
+              { id: '12m+-p7-t1', text: 'Deliver 4 conference talks', isCompleted: false },
+              { id: '12m+-p7-t2', text: 'Appear on 5 industry podcasts', isCompleted: false },
+              { id: '12m+-p7-t3', text: 'Get interviewed by major publications', isCompleted: false },
+              { id: '12m+-p7-t4', text: 'Build personal speaking brand', isCompleted: false },
+            ],
+            motivationalMessage: "🎤 You're on stage now! Your ideas are reaching thousands. This is the impact you were meant to have.",
+          },
+          {
+            number: 8,
+            title: 'Influence & Brand',
+            weeks: 'Months 17',
+            description: 'Establish market presence',
+            objectives: [
+              'Establish strong personal brand and online presence',
+              'Build substantial LinkedIn following (1000+ connections)',
+              'Create viral content demonstrating expertise',
+            ],
+            tasks: [
+              { id: '12m+-p8-t1', text: 'Launch premium personal brand website', isCompleted: false },
+              { id: '12m+-p8-t2', text: 'Grow to 1000+ LinkedIn connections', isCompleted: false },
+              { id: '12m+-p8-t3', text: 'Create viral content (10k+ impressions)', isCompleted: false },
+              { id: '12m+-p8-t4', text: 'Establish email list of 500+ subscribers', isCompleted: false },
+            ],
+            motivationalMessage: "🌟 You're a recognized brand now! People seek YOU out for your expertise. You've built something remarkable.",
+          },
+          {
+            number: 9,
+            title: 'Community Leadership',
+            weeks: 'Months 18',
+            description: 'Give back and mentor',
+            objectives: [
+              'Mentor others in your previous field',
+              'Build reputation as industry expert and innovator',
+            ],
+            tasks: [
+              { id: '12m+-p9-t1', text: 'Mentor 3-5 career transitioners', isCompleted: false },
+              { id: '12m+-p9-t2', text: 'Lead community initiative or project', isCompleted: false },
+              { id: '12m+-p9-t3', text: 'Organize industry meetup or workshop', isCompleted: false },
+              { id: '12m+-p9-t4', text: 'Receive community recognition award', isCompleted: false },
+            ],
+            motivationalMessage: "🌱 You're lifting others as you rise—the mark of true leadership. Your impact is multiplying through others.",
+          },
+          {
+            number: 10,
+            title: 'Elite Transition',
+            weeks: 'Months 18+',
+            description: 'Command your position',
             objectives: [
               'Receive inbound opportunities from reputation',
               'Target executive or specialist positions',
               'Negotiate exceptional compensation and benefits',
               'Choose opportunities aligned with long-term vision',
-              'Leverage thought leadership in negotiations',
-              'Ensure cultural alignment and growth trajectory',
-              'Plan strategic entry and 90-day impact plan',
             ],
+            tasks: [
+              { id: '12m+-p10-t1', text: 'Field inbound opportunities from reputation', isCompleted: false },
+              { id: '12m+-p10-t2', text: 'Interview at 10+ elite companies', isCompleted: false },
+              { id: '12m+-p10-t3', text: 'Negotiate multiple 6-figure offers', isCompleted: false },
+              { id: '12m+-p10-t4', text: 'Accept optimal role aligned with vision', isCompleted: false },
+              { id: '12m+-p10-t5', text: 'Execute flawless 90-day entry plan', isCompleted: false },
+            ],
+            motivationalMessage: "👑 You've become extraordinary! Companies compete for YOU now. Walk into this next chapter knowing you've earned every bit of it.",
           },
         ],
       };
@@ -290,25 +587,83 @@ export function getCurrentPhase(currentDay: number, plan: RoadmapPlan): RoadmapP
 }
 
 /**
- * Get AI coaching context based on plan strategy
+ * Get current week number within the plan
  */
-export function getStrategyContext(strategy: RoadmapPlan['strategy']): string {
+export function getCurrentWeek(startDate: string): number {
+  const currentDay = calculateCurrentDay(startDate);
+  return Math.ceil(currentDay / 7);
+}
+
+/**
+ * Get current week within a specific phase
+ */
+export function getCurrentWeekInPhase(currentDay: number, phase: RoadmapPhase, plan: RoadmapPlan): number {
+  const daysPerPhase = plan.totalDays / plan.phases.length;
+  const phaseStartDay = (phase.number - 1) * daysPerPhase;
+  const dayInPhase = currentDay - phaseStartDay;
+  return Math.max(1, Math.ceil(dayInPhase / 7));
+}
+
+/**
+ * Check if a phase is completed (all tasks done)
+ */
+export function isPhaseCompleted(phase: RoadmapPhase): boolean {
+  return phase.tasks.every(task => task.isCompleted);
+}
+
+/**
+ * Get phase completion percentage
+ */
+export function getPhaseCompletionPercentage(phase: RoadmapPhase): number {
+  if (phase.tasks.length === 0) return 0;
+  const completedTasks = phase.tasks.filter(task => task.isCompleted).length;
+  return Math.round((completedTasks / phase.tasks.length) * 100);
+}
+
+/**
+ * Get overall roadmap completion percentage
+ */
+export function getRoadmapCompletionPercentage(plan: RoadmapPlan): number {
+  const totalTasks = plan.phases.reduce((sum, phase) => sum + phase.tasks.length, 0);
+  if (totalTasks === 0) return 0;
+  const completedTasks = plan.phases.reduce((sum, phase) =>
+    sum + phase.tasks.filter(task => task.isCompleted).length, 0
+  );
+  return Math.round((completedTasks / totalTasks) * 100);
+}
+
+/**
+ * Get AI coaching context based on plan strategy and current phase
+ */
+export function getStrategyContext(strategy: RoadmapPlan['strategy'], currentPhase?: RoadmapPhase): string {
+  let baseContext = '';
+
   switch (strategy) {
     case 'sprint':
-      return 'This is a 90-day intensive sprint. Focus on immediate, high-impact actions. Suggest daily networking, rapid skill demonstrations, and aggressive timeline for applications. Emphasize quick wins and momentum.';
+      baseContext = 'This is a 90-day intensive sprint. Focus on immediate, high-impact actions. Suggest daily networking, rapid skill demonstrations, and aggressive timeline for applications. Emphasize quick wins and momentum.';
+      break;
 
     case 'balanced':
-      return 'This is a 180-day balanced transition. Balance immediate actions with strategic skill building. Suggest consistent weekly progress, networking, and portfolio development. Emphasize sustainable momentum.';
+      baseContext = 'This is a 180-day balanced transition. Balance immediate actions with strategic skill building. Suggest consistent weekly progress, networking, and portfolio development. Emphasize sustainable momentum.';
+      break;
 
     case 'sustainable':
-      return 'This is a 365-day mastery journey. Focus on deep skill development, certifications, and gradual brand building. Suggest long-term learning paths, community involvement, and strategic positioning. Emphasize quality over speed.';
+      baseContext = 'This is a 365-day mastery journey. Focus on deep skill development, certifications, and gradual brand building. Suggest long-term learning paths, community involvement, and strategic positioning. Emphasize quality over speed.';
+      break;
 
     case 'strategic':
-      return 'This is a long-term strategic growth plan (18+ months). Focus on comprehensive skill mastery, thought leadership, and industry positioning. Suggest advanced certifications, speaking opportunities, and building influence. Emphasize strategic career architecture.';
+      baseContext = 'This is a long-term strategic growth plan (18+ months). Focus on comprehensive skill mastery, thought leadership, and industry positioning. Suggest advanced certifications, speaking opportunities, and building influence. Emphasize strategic career architecture.';
+      break;
 
     default:
-      return '';
+      baseContext = '';
   }
+
+  if (currentPhase) {
+    baseContext += ` The user is currently in Phase ${currentPhase.number}: ${currentPhase.title} (${currentPhase.weeks}). ${currentPhase.description}. Focus your advice on helping them with the following objectives: ${currentPhase.objectives.join(', ')}.`;
+  }
+
+  return baseContext;
 }
 
 /**

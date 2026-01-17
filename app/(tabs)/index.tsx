@@ -13,11 +13,30 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, motivationalQuotes } from '@/constants/Colors';
-import { getUserProfile, completeWeeklyChallenge } from '@/utils/storage';
+import {
+  getUserProfile,
+  completeWeeklyChallenge,
+  getRoadmapTasksCompleted,
+  updateRoadmapTaskCompletion,
+  shouldShowMondayCheckin,
+  saveMondayCheckin,
+  shouldShowPhaseCompletion,
+  markPhaseCompleted,
+  adjustTimeline,
+} from '@/utils/storage';
 import { UserProfile } from '@/types';
 import { getCommunityStats } from '@/data/mockData';
-import { getRoadmapPlan, calculateCurrentDay, getProgressMessage } from '@/utils/roadmap';
-import RoadmapModal from '@/components/RoadmapModal';
+import {
+  getRoadmapPlan,
+  calculateCurrentDay,
+  getProgressMessage,
+  getCurrentPhase,
+  isPhaseCompleted,
+} from '@/utils/roadmap';
+import EnhancedRoadmapModal from '@/components/EnhancedRoadmapModal';
+import MondayCheckinModal from '@/components/MondayCheckinModal';
+import PhaseCompletionModal from '@/components/PhaseCompletionModal';
+import TimelineAdjustmentModal from '@/components/TimelineAdjustmentModal';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -26,6 +45,11 @@ export default function HomeScreen() {
   const [pulseAnim] = useState(new Animated.Value(1));
   const [communityStats, setCommunityStats] = useState(getCommunityStats());
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
+  const [showMondayCheckin, setShowMondayCheckin] = useState(false);
+  const [showPhaseCompletion, setShowPhaseCompletion] = useState(false);
+  const [completedPhase, setCompletedPhase] = useState<any>(null);
+  const [showTimelineAdjustment, setShowTimelineAdjustment] = useState(false);
+  const [roadmapPlan, setRoadmapPlan] = useState<any>(null);
 
   useEffect(() => {
     loadProfile();
@@ -64,6 +88,53 @@ export default function HomeScreen() {
     const userProfile = await getUserProfile();
     setProfile(userProfile);
 
+    // Check Monday checkin
+    if (userProfile && userProfile.hasCompletedOnboarding) {
+      const shouldShow = await shouldShowMondayCheckin();
+      if (shouldShow) {
+        setTimeout(() => setShowMondayCheckin(true), 1000);
+      }
+
+      // Load roadmap plan with task completion states
+      if (userProfile.transitionTimeline) {
+        const plan = getRoadmapPlan(userProfile.transitionTimeline);
+        const tasksCompleted = await getRoadmapTasksCompleted();
+
+        // Update task completion states in the plan
+        const updatedPlan = {
+          ...plan,
+          phases: plan.phases.map(phase => ({
+            ...phase,
+            tasks: phase.tasks.map(task => ({
+              ...task,
+              isCompleted: tasksCompleted[task.id] || false,
+            })),
+          })),
+        };
+
+        setRoadmapPlan(updatedPlan);
+
+        // Check for phase completion
+        if (userProfile.planStartDate) {
+          const currentDay = calculateCurrentDay(userProfile.planStartDate);
+          const currentPhase = getCurrentPhase(currentDay, updatedPlan);
+
+          // Check if current phase is completed
+          if (isPhaseCompleted(currentPhase)) {
+            const shouldShowCelebration = await shouldShowPhaseCompletion(
+              currentPhase.number,
+              plan.name
+            );
+
+            if (shouldShowCelebration) {
+              setCompletedPhase(currentPhase);
+              setTimeout(() => setShowPhaseCompletion(true), 2000);
+            }
+          }
+        }
+      }
+    }
+
     // Enhanced debug logging for milestone card visibility
     if (userProfile) {
       const initialSession = userProfile.sessions?.find(s => s.id.startsWith('initial-'));
@@ -99,6 +170,82 @@ export default function HomeScreen() {
       'Great work! You earned a bonus streak point. Keep it up!',
       [{ text: 'Awesome!' }]
     );
+  };
+
+  const handleMondayCheckin = async (completion: 'all' | 'some' | 'none') => {
+    await saveMondayCheckin(completion);
+    setShowMondayCheckin(false);
+
+    let message = '';
+    if (completion === 'all') {
+      message = '🎉 Amazing work! Keep this momentum going!';
+    } else if (completion === 'some') {
+      message = '👍 Progress is progress! Every step counts.';
+    } else {
+      message = '💪 That\'s okay! Let\'s adjust your approach and keep moving forward.';
+    }
+
+    Alert.alert('Check-In Recorded', message, [{ text: 'Thanks!' }]);
+    await loadProfile();
+  };
+
+  const handleTaskToggle = async (phaseNumber: number, taskId: string) => {
+    if (!roadmapPlan) return;
+
+    // Find the task and toggle it
+    const updatedPlan = {
+      ...roadmapPlan,
+      phases: roadmapPlan.phases.map((phase: any) =>
+        phase.number === phaseNumber
+          ? {
+              ...phase,
+              tasks: phase.tasks.map((task: any) =>
+                task.id === taskId
+                  ? { ...task, isCompleted: !task.isCompleted }
+                  : task
+              ),
+            }
+          : phase
+      ),
+    };
+
+    setRoadmapPlan(updatedPlan);
+
+    // Save to storage
+    const phase = updatedPlan.phases.find((p: any) => p.number === phaseNumber);
+    const task = phase.tasks.find((t: any) => t.id === taskId);
+    await updateRoadmapTaskCompletion(taskId, task.isCompleted);
+
+    // Check if phase is now completed
+    if (isPhaseCompleted(phase)) {
+      await markPhaseCompleted(phaseNumber, roadmapPlan.name);
+      const shouldShowCelebration = await shouldShowPhaseCompletion(
+        phaseNumber,
+        roadmapPlan.name
+      );
+
+      if (shouldShowCelebration) {
+        setCompletedPhase(phase);
+        setShowRoadmapModal(false);
+        setTimeout(() => setShowPhaseCompletion(true), 500);
+      }
+    }
+  };
+
+  const handleTimelineAdjustment = async (newTimeline: any) => {
+    await adjustTimeline(newTimeline);
+    setShowTimelineAdjustment(false);
+    Alert.alert(
+      'Timeline Updated! 🎯',
+      'Your roadmap has been adjusted to your new timeline. Your progress is preserved.',
+      [{ text: 'Great!' }]
+    );
+    await loadProfile();
+  };
+
+  const handlePhaseCompletionClose = () => {
+    setShowPhaseCompletion(false);
+    setCompletedPhase(null);
   };
 
   const hasAnySessions = profile && profile.sessions.length > 0;
@@ -417,15 +564,49 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* Roadmap Modal */}
-      {profile?.transitionTimeline && (
-        <RoadmapModal
+      {/* Enhanced Roadmap Modal */}
+      {profile?.transitionTimeline && roadmapPlan && (
+        <EnhancedRoadmapModal
           visible={showRoadmapModal}
           onClose={() => setShowRoadmapModal(false)}
-          roadmapPlan={getRoadmapPlan(profile.transitionTimeline)}
+          roadmapPlan={roadmapPlan}
           currentDay={
             profile.planStartDate ? calculateCurrentDay(profile.planStartDate) : 1
           }
+          onTaskToggle={handleTaskToggle}
+          onAdjustTimeline={() => {
+            setShowRoadmapModal(false);
+            setTimeout(() => setShowTimelineAdjustment(true), 300);
+          }}
+        />
+      )}
+
+      {/* Monday Check-in Modal */}
+      <MondayCheckinModal
+        visible={showMondayCheckin}
+        onClose={() => setShowMondayCheckin(false)}
+        onSubmit={handleMondayCheckin}
+      />
+
+      {/* Phase Completion Modal */}
+      {completedPhase && roadmapPlan && (
+        <PhaseCompletionModal
+          visible={showPhaseCompletion}
+          onClose={handlePhaseCompletionClose}
+          completedPhase={completedPhase}
+          nextPhase={roadmapPlan.phases[completedPhase.number]}
+          totalPhases={roadmapPlan.phases.length}
+          completedPhasesCount={completedPhase.number}
+        />
+      )}
+
+      {/* Timeline Adjustment Modal */}
+      {profile?.transitionTimeline && (
+        <TimelineAdjustmentModal
+          visible={showTimelineAdjustment}
+          onClose={() => setShowTimelineAdjustment(false)}
+          currentTimeline={profile.transitionTimeline}
+          onAdjust={handleTimelineAdjustment}
         />
       )}
     </SafeAreaView>

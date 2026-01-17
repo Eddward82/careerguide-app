@@ -17,6 +17,7 @@ import { CareerGoal, Resource, UserProfile } from '@/types';
 import AIRecommendedBadge from '@/components/AIRecommendedBadge';
 import SmartMatchWelcome from '@/components/SmartMatchWelcome';
 import { isFirstResourceVisit, markResourceVisited } from '@/utils/notifications';
+import { getRoadmapPlan, calculateCurrentDay, getCurrentPhase } from '@/utils/roadmap';
 
 const categoryColors = {
   'LinkedIn Articles': '#0077B5',
@@ -35,6 +36,7 @@ export default function ResourcesScreen() {
   const [careerGoal, setCareerGoal] = useState<CareerGoal | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showWelcome, setShowWelcome] = useState(false);
+  const [currentPhaseNumber, setCurrentPhaseNumber] = useState<number>(1);
 
   useEffect(() => {
     loadProfileAndCheckFirstVisit();
@@ -45,9 +47,54 @@ export default function ResourcesScreen() {
     setProfile(userProfile);
     setCareerGoal(userProfile.careerGoal);
 
+    // Get current phase for resource gating
+    if (userProfile.transitionTimeline && userProfile.planStartDate) {
+      try {
+        const plan = getRoadmapPlan(userProfile.transitionTimeline);
+        const currentDay = calculateCurrentDay(userProfile.planStartDate);
+        const currentPhase = getCurrentPhase(currentDay, plan);
+        setCurrentPhaseNumber(currentPhase.number);
+      } catch (error) {
+        console.error('Error getting current phase:', error);
+      }
+    }
+
     // Check if this is first visit to Resources
     const isFirst = await isFirstResourceVisit();
     setShowWelcome(isFirst);
+  };
+
+  // Helper function to determine if a resource is unlocked based on phase
+  const isResourceUnlocked = (resourceId: string): boolean => {
+    // Define phase gating rules
+    const phaseGating: Record<string, number> = {
+      // Phase 1: Basic resources (Resume, LinkedIn basics)
+      'l3': 1, // Resume article
+      'l1': 1, // Tech roadmap article
+      'c2': 1, // CS50 course
+
+      // Phase 2-3: Intermediate resources (Courses, Networking)
+      'l2': 2, // Management article
+      'c1': 2, // Google PM Certificate
+      'c3': 2, // Web Dev Bootcamp
+      'n1': 2, // Tech meetups
+
+      // Phase 4+: Advanced resources (Interview prep, Advanced networking)
+      'l4': 4, // Salary negotiation
+      'c4': 4, // Interview prep
+      'n2': 4, // Product managers group
+      'n3': 4, // Women in Tech
+    };
+
+    const requiredPhase = phaseGating[resourceId];
+
+    // If resource is not gated, it's always unlocked
+    if (!requiredPhase) {
+      return true;
+    }
+
+    // Check if user has reached the required phase
+    return currentPhaseNumber >= requiredPhase;
   };
 
   const handleDismissWelcome = async () => {
@@ -128,51 +175,99 @@ export default function ResourcesScreen() {
         </ScrollView>
 
         {/* Resources List */}
-        {filteredResources.map((resource) => (
-          <TouchableOpacity
-            key={resource.id}
-            style={styles.resourceCard}
-            onPress={() => handleOpenResource(resource.url)}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.resourceIcon,
-                { backgroundColor: categoryColors[resource.category] + '20' },
-              ]}
-            >
-              <Ionicons
-                name={categoryIcons[resource.category]}
-                size={24}
-                color={categoryColors[resource.category]}
-              />
-            </View>
+        {filteredResources.map((resource) => {
+          const isUnlocked = isResourceUnlocked(resource.id);
 
-            <View style={styles.resourceContent}>
-              <View style={styles.resourceHeader}>
-                <View
+          return (
+            <TouchableOpacity
+              key={resource.id}
+              style={[styles.resourceCard, !isUnlocked && styles.resourceCardLocked]}
+              onPress={() => isUnlocked && handleOpenResource(resource.url)}
+              activeOpacity={isUnlocked ? 0.7 : 1}
+              disabled={!isUnlocked}
+            >
+              <View
+                style={[
+                  styles.resourceIcon,
+                  {
+                    backgroundColor: isUnlocked
+                      ? categoryColors[resource.category] + '20'
+                      : Colors.lightGray,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={isUnlocked ? categoryIcons[resource.category] : 'lock-closed'}
+                  size={24}
+                  color={
+                    isUnlocked ? categoryColors[resource.category] : Colors.mediumGray
+                  }
+                />
+              </View>
+
+              <View style={styles.resourceContent}>
+                <View style={styles.resourceHeader}>
+                  {!isUnlocked && (
+                    <View style={styles.lockedBadge}>
+                      <Ionicons name="lock-closed" size={12} color={Colors.white} />
+                      <Text style={styles.lockedBadgeText}>
+                        Unlocks in Phase {/* You can calculate required phase here */}
+                      </Text>
+                    </View>
+                  )}
+                  {isUnlocked && (
+                    <>
+                      <View
+                        style={[
+                          styles.categoryBadge,
+                          { backgroundColor: categoryColors[resource.category] },
+                        ]}
+                      >
+                        <Text style={styles.categoryBadgeText}>{resource.category}</Text>
+                      </View>
+                      {careerGoal && resource.relevantTo.includes(careerGoal) && (
+                        <AIRecommendedBadge goal={careerGoal} />
+                      )}
+                    </>
+                  )}
+                </View>
+
+                <Text
                   style={[
-                    styles.categoryBadge,
-                    { backgroundColor: categoryColors[resource.category] },
+                    styles.resourceTitle,
+                    !isUnlocked && styles.resourceTitleLocked,
                   ]}
                 >
-                  <Text style={styles.categoryBadgeText}>{resource.category}</Text>
+                  {resource.title}
+                </Text>
+                <Text
+                  style={[
+                    styles.resourceDescription,
+                    !isUnlocked && styles.resourceDescriptionLocked,
+                  ]}
+                >
+                  {isUnlocked
+                    ? resource.description
+                    : 'Complete more phases to unlock this premium resource'}
+                </Text>
+
+                <View style={styles.resourceFooter}>
+                  {isUnlocked ? (
+                    <>
+                      <Text style={styles.resourceLink}>Open resource</Text>
+                      <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.resourceLinkLocked}>Locked</Text>
+                      <Ionicons name="lock-closed" size={16} color={Colors.mediumGray} />
+                    </>
+                  )}
                 </View>
-                {careerGoal && resource.relevantTo.includes(careerGoal) && (
-                  <AIRecommendedBadge goal={careerGoal} />
-                )}
               </View>
-
-              <Text style={styles.resourceTitle}>{resource.title}</Text>
-              <Text style={styles.resourceDescription}>{resource.description}</Text>
-
-              <View style={styles.resourceFooter}>
-                <Text style={styles.resourceLink}>Open resource</Text>
-                <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
 
         {filteredResources.length === 0 && (
           <View style={styles.emptyState}>
@@ -309,5 +404,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.mediumGray,
     marginTop: 16,
+  },
+  resourceCardLocked: {
+    opacity: 0.6,
+    backgroundColor: '#F8F9FA',
+  },
+  lockedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.mediumGray,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 8,
+  },
+  lockedBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.white,
+    marginLeft: 4,
+  },
+  resourceTitleLocked: {
+    color: Colors.mediumGray,
+  },
+  resourceDescriptionLocked: {
+    fontStyle: 'italic',
+  },
+  resourceLinkLocked: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.mediumGray,
+    marginRight: 4,
   },
 });

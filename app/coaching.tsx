@@ -17,6 +17,7 @@ import { Colors } from '@/constants/Colors';
 import { useTextGeneration } from '@fastshot/ai';
 import { addCoachingSession, getUserProfile } from '@/utils/storage';
 import { CoachingSession } from '@/types';
+import { getRoadmapPlan, calculateCurrentDay, getCurrentPhase, getStrategyContext } from '@/utils/roadmap';
 
 export default function CoachingScreen() {
   const router = useRouter();
@@ -59,15 +60,30 @@ export default function CoachingScreen() {
         ? `currently working as a ${profile.currentRole}`
         : 'a professional';
 
+      // Get phase-aware coaching context
+      let phaseContext = '';
+      let currentPhase = null;
+      if (profile.transitionTimeline && profile.planStartDate) {
+        try {
+          const plan = getRoadmapPlan(profile.transitionTimeline);
+          const currentDay = calculateCurrentDay(profile.planStartDate);
+          currentPhase = getCurrentPhase(currentDay, plan);
+          phaseContext = getStrategyContext(plan.strategy, currentPhase);
+        } catch (error) {
+          console.error('Error getting phase context:', error);
+        }
+      }
+
       const prompt = `You are an expert career coach. Help ${roleContext} ${experienceContext} who wants to ${profile.careerGoal}.
 
-They are facing this challenge: "${challenge}"
+${phaseContext ? `IMPORTANT CONTEXT: ${phaseContext}\n\n` : ''}They are facing this challenge: "${challenge}"
 
-Based on their background as a ${profile.currentRole || 'professional'}, provide 3-5 specific, actionable steps they can take this week. Focus on:
+Based on their background as a ${profile.currentRole || 'professional'}${currentPhase ? ` and their current roadmap phase (Phase ${currentPhase.number}: ${currentPhase.title})` : ''}, provide 3-5 specific, actionable steps they can take this week. Focus on:
 - Leveraging their existing skills and experience
 - Concrete actions they can start immediately
 - Time-bound activities (specify when to do it)
 - Clear outcomes they'll achieve
+${currentPhase ? `- Actions aligned with their current phase objectives: ${currentPhase.objectives.slice(0, 3).join(', ')}` : ''}
 
 Format your response as a numbered list with clear, concise bullet points. Each step should be one sentence. Do not include any introductory text, just the numbered action steps.`;
 

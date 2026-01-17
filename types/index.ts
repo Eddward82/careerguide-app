@@ -59,6 +59,18 @@ export interface UserProfile {
   // Roadmap tracking
   planStartDate?: string; // ISO date when the plan started
   planName?: string; // e.g., "90-Day Career Sprint"
+  roadmapTasksCompleted?: Record<string, boolean>; // Task completion tracking
+  mondayCheckins?: Array<{
+    date: string;
+    completion: 'all' | 'some' | 'none';
+    streakAdjustment: number;
+  }>;
+  completedPhases?: Array<{
+    phaseNumber: number;
+    planName: string;
+    completedAt: string;
+  }>;
+  phaseExtensions?: Record<number, number>; // Phase number -> weeks extended
 
   // Progress tracking
   currentStreak: number;
