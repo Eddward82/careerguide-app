@@ -97,7 +97,7 @@ export default function HomeScreen() {
 
       // Load roadmap plan with task completion states
       if (userProfile.transitionTimeline) {
-        const plan = getRoadmapPlan(userProfile.transitionTimeline);
+        const plan = getRoadmapPlan(userProfile.transitionTimeline, userProfile.careerGoal);
         const tasksCompleted = await getRoadmapTasksCompleted();
 
         // Update task completion states in the plan
@@ -286,7 +286,7 @@ export default function HomeScreen() {
                 <Text style={styles.roadmapPlanName}>{profile.planName}</Text>
                 <Text style={styles.roadmapSubtitle}>
                   Day {calculateCurrentDay(profile.planStartDate)} of{' '}
-                  {getRoadmapPlan(profile.transitionTimeline).totalDays}
+                  {getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays}
                 </Text>
               </View>
             </View>
@@ -298,7 +298,7 @@ export default function HomeScreen() {
                     {
                       width: `${Math.min(
                         (calculateCurrentDay(profile.planStartDate) /
-                          getRoadmapPlan(profile.transitionTimeline).totalDays) *
+                          getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays) *
                           100,
                         100
                       )}%`,
@@ -310,7 +310,7 @@ export default function HomeScreen() {
                 {Math.min(
                   Math.round(
                     (calculateCurrentDay(profile.planStartDate) /
-                      getRoadmapPlan(profile.transitionTimeline).totalDays) *
+                      getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays) *
                       100
                   ),
                   100
