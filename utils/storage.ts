@@ -4,6 +4,7 @@ import {
   CoachingSession,
   CareerGoal,
   TransitionTimeline,
+  TransitionDriver,
   Badge,
   BadgeType,
   WeeklyChallenge
@@ -178,7 +179,8 @@ export const completeOnboarding = async (
   careerGoal: CareerGoal,
   currentRole: string,
   yearsExperience: number,
-  transitionTimeline: TransitionTimeline
+  transitionTimeline: TransitionTimeline,
+  transitionDriver?: TransitionDriver
 ): Promise<void> => {
   try {
     const profile = await getUserProfile();
@@ -187,6 +189,7 @@ export const completeOnboarding = async (
     profile.currentRole = currentRole;
     profile.yearsExperience = yearsExperience;
     profile.transitionTimeline = transitionTimeline;
+    profile.transitionDriver = transitionDriver;
     profile.hasCompletedOnboarding = true;
     await saveUserProfile(profile);
   } catch (error) {

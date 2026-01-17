@@ -20,6 +20,21 @@ interface NewellAIResponse {
 }
 
 /**
+ * Get driver-specific guidance for the AI prompt
+ */
+function getDriverSpecificGuidance(driver: string): string {
+  const guidanceMap: Record<string, string> = {
+    'Escape': '4. Prioritize quick wins and immediate relief from current situation while building long-term foundation',
+    'Better Pay': '4. Focus on highlighting high-value skills and salary negotiation strategies',
+    'Career Growth': '4. Emphasize leadership development and advancement opportunities',
+    'Passion': '4. Help align daily actions with their core interests and values',
+    'Work-Life Balance': '4. Recommend sustainable career moves that prioritize flexibility and boundaries',
+    'Personal Development': '4. Include learning opportunities and skill-building activities',
+  };
+  return guidanceMap[driver] || '';
+}
+
+/**
  * Generate initial career transition plan using Newell AI
  */
 export const generateInitialPlan = async (
@@ -27,16 +42,28 @@ export const generateInitialPlan = async (
   currentRole: string,
   targetGoal: string,
   yearsExperience: number,
-  timeline: string
+  timeline: string,
+  transitionDriver?: string
 ): Promise<string[]> => {
   try {
-    // Create hyper-personalized prompt
+    // Create hyper-personalized prompt with driver information
+    const driverContext = transitionDriver
+      ? `They are motivated by: ${transitionDriver}. Keep this motivation in mind when crafting your advice.`
+      : '';
+
+    const driverGuidance = transitionDriver
+      ? getDriverSpecificGuidance(transitionDriver)
+      : '';
+
     const prompt = `You are a professional career coach. Create a focused 3-step immediate action plan for ${name}, who is a ${currentRole} with ${yearsExperience} years of experience, transitioning to ${targetGoal} within ${timeline}.
+
+${driverContext}
 
 Focus on:
 1. Identifying and leveraging transferable skills
 2. Immediate actionable steps they can take this week
 3. Building momentum for their transition
+${driverGuidance}
 
 Return ONLY 3 specific, actionable steps as a numbered list. Each step should be:
 - Concrete and immediately actionable

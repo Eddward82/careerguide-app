@@ -7,6 +7,14 @@ export type CareerGoal =
 
 export type TransitionTimeline = '1-3m' | '3-6m' | '6-12m' | '12m+';
 
+export type TransitionDriver =
+  | 'Escape'
+  | 'Better Pay'
+  | 'Career Growth'
+  | 'Passion'
+  | 'Work-Life Balance'
+  | 'Personal Development';
+
 export type BadgeType =
   | 'week_warrior'    // 7-day streak
   | 'career_launcher' // 30-day streak
@@ -46,6 +54,7 @@ export interface UserProfile {
   currentRole: string;
   yearsExperience: number;
   transitionTimeline: TransitionTimeline;
+  transitionDriver?: TransitionDriver;
 
   // Progress tracking
   currentStreak: number;

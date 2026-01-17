@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
-import { CareerGoal, TransitionTimeline, CoachingSession } from '@/types';
+import { CareerGoal, TransitionTimeline, TransitionDriver, CoachingSession } from '@/types';
 import { completeOnboarding, clearAllData, addCoachingSession } from '@/utils/storage';
 import { generateInitialPlan } from '@/utils/newellAi';
 
@@ -41,6 +41,15 @@ const timelines: { value: TransitionTimeline; label: string }[] = [
   { value: '12m+', label: '12+ months' },
 ];
 
+const transitionDrivers: TransitionDriver[] = [
+  'Escape',
+  'Better Pay',
+  'Career Growth',
+  'Passion',
+  'Work-Life Balance',
+  'Personal Development',
+];
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -51,13 +60,14 @@ export default function OnboardingScreen() {
   // Form data
   const [name, setName] = useState('');
   const [selectedGoal, setSelectedGoal] = useState<CareerGoal | null>(null);
+  const [selectedDriver, setSelectedDriver] = useState<TransitionDriver | null>(null);
   const [currentRole, setCurrentRole] = useState('');
   const [yearsExperience, setYearsExperience] = useState(2);
   const [selectedTimeline, setSelectedTimeline] = useState<TransitionTimeline>('3-6m');
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   // Ensure onboarding always starts at Step 1 (index 0)
   useEffect(() => {
@@ -128,7 +138,8 @@ export default function OnboardingScreen() {
         currentRole,
         selectedGoal,
         yearsExperience,
-        timelineLabel
+        timelineLabel,
+        selectedDriver || undefined
       );
 
       // Complete onboarding first
@@ -137,7 +148,8 @@ export default function OnboardingScreen() {
         selectedGoal,
         currentRole,
         yearsExperience,
-        selectedTimeline
+        selectedTimeline,
+        selectedDriver || undefined
       );
 
       // Create and save the initial coaching session
@@ -183,6 +195,7 @@ export default function OnboardingScreen() {
       setCurrentStep(0);
       setName('');
       setSelectedGoal(null);
+      setSelectedDriver(null);
       setCurrentRole('');
       setYearsExperience(2);
       setSelectedTimeline('3-6m');
@@ -207,10 +220,12 @@ export default function OnboardingScreen() {
       case 0:
         return selectedGoal !== null;
       case 1:
-        return name.trim().length > 0;
+        return selectedDriver !== null;
       case 2:
-        return currentRole.trim().length > 0;
+        return name.trim().length > 0;
       case 3:
+        return currentRole.trim().length > 0;
+      case 4:
         return true;
       default:
         return false;
@@ -341,7 +356,53 @@ export default function OnboardingScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 2: Name */}
+        {/* Step 2: Transition Driver */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView contentContainerStyle={styles.stepScroll}>
+            <Text style={styles.title}>What&apos;s driving this transition?</Text>
+            <Text style={styles.subtitle}>Understanding your motivation helps us guide you better</Text>
+
+            <View style={styles.optionsContainer}>
+              {transitionDrivers.map((driver) => (
+                <TouchableOpacity
+                  key={driver}
+                  style={[
+                    styles.optionCard,
+                    selectedDriver === driver && styles.optionCardSelected,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedDriver(driver);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.optionContent}>
+                    <View
+                      style={[
+                        styles.radioButton,
+                        selectedDriver === driver && styles.radioButtonSelected,
+                      ]}
+                    >
+                      {selectedDriver === driver && (
+                        <View style={styles.radioButtonInner} />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedDriver === driver && styles.optionTextSelected,
+                      ]}
+                    >
+                      {driver}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Step 3: Name */}
         <View style={[styles.step, { width }]}>
           <ScrollView
             contentContainerStyle={styles.stepScrollInline}
@@ -361,7 +422,7 @@ export default function OnboardingScreen() {
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
-                autoFocus={currentStep === 1}
+                autoFocus={currentStep === 2}
                 returnKeyType="done"
                 onSubmitEditing={() => {
                   if (name.trim().length > 0) {
@@ -463,7 +524,13 @@ export default function OnboardingScreen() {
                 maximumValue={20}
                 step={1}
                 value={yearsExperience}
-                onValueChange={setYearsExperience}
+                onValueChange={(value) => {
+                  setYearsExperience(Math.round(value));
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                onSlidingComplete={(value) => {
+                  setYearsExperience(Math.round(value));
+                }}
                 minimumTrackTintColor={Colors.primary}
                 maximumTrackTintColor={Colors.lightGray}
                 thumbTintColor={Colors.primary}
@@ -615,8 +682,8 @@ export default function OnboardingScreen() {
         </View>
         </Animated.View>
 
-        {/* Navigation Buttons - Only show for step 0 (Career Goal - only step without inline buttons) */}
-        {currentStep === 0 && (
+        {/* Navigation Buttons - Only show for steps 0 and 1 (Career Goal and Transition Driver - steps without inline buttons) */}
+        {(currentStep === 0 || currentStep === 1) && (
           <View
             style={[
               styles.navigationContainer,
