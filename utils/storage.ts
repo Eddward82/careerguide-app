@@ -180,7 +180,9 @@ export const completeOnboarding = async (
   currentRole: string,
   yearsExperience: number,
   transitionTimeline: TransitionTimeline,
-  transitionDriver?: TransitionDriver
+  transitionDriver?: TransitionDriver,
+  planStartDate?: string,
+  planName?: string
 ): Promise<void> => {
   try {
     const profile = await getUserProfile();
@@ -190,6 +192,8 @@ export const completeOnboarding = async (
     profile.yearsExperience = yearsExperience;
     profile.transitionTimeline = transitionTimeline;
     profile.transitionDriver = transitionDriver;
+    profile.planStartDate = planStartDate;
+    profile.planName = planName;
     profile.hasCompletedOnboarding = true;
     await saveUserProfile(profile);
   } catch (error) {

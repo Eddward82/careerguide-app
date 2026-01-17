@@ -16,6 +16,7 @@ import { Colors, motivationalQuotes } from '@/constants/Colors';
 import { getUserProfile, completeWeeklyChallenge } from '@/utils/storage';
 import { UserProfile } from '@/types';
 import { getCommunityStats } from '@/data/mockData';
+import { getRoadmapPlan, calculateCurrentDay, getProgressMessage } from '@/utils/roadmap';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -94,6 +95,52 @@ export default function HomeScreen() {
             <Ionicons name="notifications-outline" size={24} color={Colors.navy} />
           </TouchableOpacity>
         </View>
+
+        {/* Dynamic Roadmap Progress Card */}
+        {profile?.planName && profile?.planStartDate && profile?.transitionTimeline && (
+          <View style={styles.roadmapCard}>
+            <View style={styles.roadmapHeader}>
+              <View style={styles.roadmapIconContainer}>
+                <Ionicons name="map" size={24} color={Colors.primary} />
+              </View>
+              <View style={styles.roadmapHeaderText}>
+                <Text style={styles.roadmapPlanName}>{profile.planName}</Text>
+                <Text style={styles.roadmapSubtitle}>
+                  Day {calculateCurrentDay(profile.planStartDate)} of{' '}
+                  {getRoadmapPlan(profile.transitionTimeline).totalDays}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${Math.min(
+                        (calculateCurrentDay(profile.planStartDate) /
+                          getRoadmapPlan(profile.transitionTimeline).totalDays) *
+                          100,
+                        100
+                      )}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressPercentage}>
+                {Math.min(
+                  Math.round(
+                    (calculateCurrentDay(profile.planStartDate) /
+                      getRoadmapPlan(profile.transitionTimeline).totalDays) *
+                      100
+                  ),
+                  100
+                )}
+                % Complete
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Weekly Challenge Card */}
         {profile?.weeklyChallenge && (
@@ -272,7 +319,17 @@ export default function HomeScreen() {
                 <Text style={styles.streakTitle}>
                   {profile?.currentStreak || 0} Day Streak!
                 </Text>
-                <Text style={styles.streakSubtitle}>Keep the momentum going.</Text>
+                {profile?.planName && profile?.planStartDate && profile?.transitionTimeline ? (
+                  <Text style={styles.streakSubtitle}>
+                    {getProgressMessage(
+                      calculateCurrentDay(profile.planStartDate),
+                      getRoadmapPlan(profile.transitionTimeline).totalDays,
+                      profile.planName
+                    )}
+                  </Text>
+                ) : (
+                  <Text style={styles.streakSubtitle}>Keep the momentum going.</Text>
+                )}
               </View>
             </View>
 
@@ -364,6 +421,68 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  roadmapCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4A90E2', // Sky Blue
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  roadmapHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  roadmapIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F0F7FF', // Light blue
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  roadmapHeaderText: {
+    flex: 1,
+  },
+  roadmapPlanName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginBottom: 4,
+  },
+  roadmapSubtitle: {
+    fontSize: 14,
+    color: '#4A90E2', // Sky Blue
+    fontWeight: '600',
+  },
+  progressBarContainer: {
+    marginTop: 4,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: Colors.lightGray,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#4A90E2', // Sky Blue
+    borderRadius: 4,
+  },
+  progressPercentage: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    textAlign: 'right',
+    fontWeight: '600',
   },
   challengeCard: {
     backgroundColor: Colors.white,

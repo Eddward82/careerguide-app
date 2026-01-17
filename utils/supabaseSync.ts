@@ -30,6 +30,8 @@ export async function migrateLocalDataToCloud(userId: string): Promise<boolean> 
       years_experience: localProfile.yearsExperience,
       timeline: localProfile.transitionTimeline,
       transition_driver: localProfile.transitionDriver,
+      plan_start_date: localProfile.planStartDate,
+      plan_name: localProfile.planName,
       current_streak: localProfile.currentStreak,
       longest_streak: localProfile.longestStreak || localProfile.currentStreak,
       last_active_date: new Date().toISOString(),
@@ -155,6 +157,8 @@ export async function syncProfileToCloud(
       updateData.years_experience = profile.yearsExperience;
     if (profile.transitionTimeline) updateData.timeline = profile.transitionTimeline;
     if (profile.transitionDriver) updateData.transition_driver = profile.transitionDriver;
+    if (profile.planStartDate) updateData.plan_start_date = profile.planStartDate;
+    if (profile.planName) updateData.plan_name = profile.planName;
     if (profile.currentStreak !== undefined)
       updateData.current_streak = profile.currentStreak;
     if (profile.longestStreak !== undefined)

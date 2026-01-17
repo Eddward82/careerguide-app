@@ -56,6 +56,10 @@ export interface UserProfile {
   transitionTimeline: TransitionTimeline;
   transitionDriver?: TransitionDriver;
 
+  // Roadmap tracking
+  planStartDate?: string; // ISO date when the plan started
+  planName?: string; // e.g., "90-Day Career Sprint"
+
   // Progress tracking
   currentStreak: number;
   longestStreak?: number;

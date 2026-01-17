@@ -23,6 +23,7 @@ import { Colors } from '@/constants/Colors';
 import { CareerGoal, TransitionTimeline, TransitionDriver, CoachingSession } from '@/types';
 import { completeOnboarding, clearAllData, addCoachingSession } from '@/utils/storage';
 import { generateInitialPlan } from '@/utils/newellAi';
+import { getRoadmapPlan } from '@/utils/roadmap';
 
 const { width } = Dimensions.get('window');
 
@@ -66,6 +67,7 @@ export default function OnboardingScreen() {
   const [selectedTimeline, setSelectedTimeline] = useState<TransitionTimeline>('3-6m');
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [planName, setPlanName] = useState('');
 
   const totalSteps = 5;
 
@@ -131,6 +133,10 @@ export default function OnboardingScreen() {
     setIsLoading(true);
 
     try {
+      // Get the dynamic roadmap plan
+      const roadmapPlan = getRoadmapPlan(selectedTimeline);
+      const planStartDate = new Date().toISOString();
+
       // Generate personalized initial plan using Newell AI
       const timelineLabel = timelines.find(t => t.value === selectedTimeline)?.label || '3-6 months';
       const actionPlan = await generateInitialPlan(
@@ -139,7 +145,8 @@ export default function OnboardingScreen() {
         selectedGoal,
         yearsExperience,
         timelineLabel,
-        selectedDriver || undefined
+        selectedDriver || undefined,
+        roadmapPlan
       );
 
       // Complete onboarding first
@@ -149,7 +156,9 @@ export default function OnboardingScreen() {
         currentRole,
         yearsExperience,
         selectedTimeline,
-        selectedDriver || undefined
+        selectedDriver || undefined,
+        planStartDate,
+        roadmapPlan.name
       );
 
       // Create and save the initial coaching session
@@ -164,6 +173,7 @@ export default function OnboardingScreen() {
       await addCoachingSession(initialSession);
 
       setIsLoading(false);
+      setPlanName(roadmapPlan.name);
       setShowWelcome(true);
 
       // Navigate to main app after showing welcome
@@ -247,7 +257,7 @@ export default function OnboardingScreen() {
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingTitle}>Preparing Your Plan...</Text>
           <Text style={styles.loadingSubtitle}>
-            Creating your personalized 30-day career transition roadmap
+            Creating your personalized {getRoadmapPlan(selectedTimeline).name}
           </Text>
         </View>
       </SafeAreaView>
@@ -271,9 +281,10 @@ export default function OnboardingScreen() {
           </View>
           <Text style={styles.welcomeTitle}>Welcome, {name}! 🎉</Text>
           <Text style={styles.welcomeSubtitle}>
-            Your 30-day career transition plan from{' '}
-            <Text style={styles.welcomeHighlight}>{currentRole}</Text> to{' '}
-            <Text style={styles.welcomeHighlight}>{selectedGoal}</Text> is ready!
+            Your <Text style={styles.welcomeHighlight}>{planName}</Text> is ready!
+          </Text>
+          <Text style={styles.welcomeNote}>
+            Transitioning from {currentRole} to {selectedGoal}
           </Text>
           <Text style={styles.welcomeNote}>Let&apos;s begin your journey...</Text>
         </View>

@@ -43,10 +43,14 @@ export const generateInitialPlan = async (
   targetGoal: string,
   yearsExperience: number,
   timeline: string,
-  transitionDriver?: string
+  transitionDriver?: string,
+  roadmapPlan?: { name: string; strategy: string; totalDays: number }
 ): Promise<string[]> => {
   try {
-    // Create hyper-personalized prompt with driver information
+    // Import strategy context
+    const { getStrategyContext } = require('./roadmap');
+
+    // Create hyper-personalized prompt with driver and roadmap information
     const driverContext = transitionDriver
       ? `They are motivated by: ${transitionDriver}. Keep this motivation in mind when crafting your advice.`
       : '';
@@ -55,9 +59,13 @@ export const generateInitialPlan = async (
       ? getDriverSpecificGuidance(transitionDriver)
       : '';
 
+    const roadmapContext = roadmapPlan
+      ? `\n\nROADMAP CONTEXT: ${name} is following the "${roadmapPlan.name}" (${roadmapPlan.totalDays} days). ${getStrategyContext(roadmapPlan.strategy as any)}`
+      : '';
+
     const prompt = `You are a professional career coach. Create a focused 3-step immediate action plan for ${name}, who is a ${currentRole} with ${yearsExperience} years of experience, transitioning to ${targetGoal} within ${timeline}.
 
-${driverContext}
+${driverContext}${roadmapContext}
 
 Focus on:
 1. Identifying and leveraging transferable skills
@@ -69,6 +77,7 @@ Return ONLY 3 specific, actionable steps as a numbered list. Each step should be
 - Concrete and immediately actionable
 - Specific to their background and goal
 - Achievable within 1-2 weeks
+- Aligned with the roadmap strategy
 
 Format your response as:
 1. [First actionable step]
