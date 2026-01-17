@@ -148,6 +148,23 @@ export default function RoadmapModal({
 
                     <Text style={styles.phaseTitle}>{phase.title}</Text>
                     <Text style={styles.phaseDescription}>{phase.description}</Text>
+
+                    {/* Objectives List */}
+                    {phase.objectives && phase.objectives.length > 0 && (
+                      <View style={styles.objectivesContainer}>
+                        {phase.objectives.map((objective, objIndex) => (
+                          <View key={objIndex} style={styles.objectiveRow}>
+                            <Ionicons
+                              name="checkmark-circle-outline"
+                              size={18}
+                              color={Colors.primary}
+                              style={styles.objectiveIcon}
+                            />
+                            <Text style={styles.objectiveText}>{objective}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
 
                   {/* Connector Line */}
@@ -336,6 +353,27 @@ const styles = StyleSheet.create({
   phaseDescription: {
     fontSize: 14,
     color: Colors.mediumGray,
+    lineHeight: 20,
+  },
+  objectivesContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGray,
+  },
+  objectiveRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  objectiveIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  objectiveText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.navy,
     lineHeight: 20,
   },
   connectorContainer: {
