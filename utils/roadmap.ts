@@ -1,4 +1,4 @@
-import { TransitionTimeline } from '@/types';
+import { TransitionTimeline, CareerGoal } from '@/types';
 
 export interface RoadmapPlan {
   name: string;
@@ -24,12 +24,45 @@ export interface RoadmapPhase {
 }
 
 /**
- * Get the dynamic roadmap plan based on the user's selected timeline
+ * Customize roadmap objectives based on career goal
  */
-export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
+function customizeObjectivesForGoal(objectives: string[], goal: CareerGoal): string[] {
+  return objectives.map(obj => {
+    // Replace generic terms with goal-specific ones
+    if (goal === 'Switching to Tech') {
+      return obj
+        .replace('transferable skills', 'technical skills and projects')
+        .replace('target role', 'tech role')
+        .replace('portfolio or personal website', 'GitHub profile and technical portfolio');
+    } else if (goal === 'Moving to Management') {
+      return obj
+        .replace('transferable skills', 'leadership experience')
+        .replace('portfolio or personal website', 'leadership portfolio and case studies')
+        .replace('target role', 'management position');
+    } else if (goal === 'Resume Refresh') {
+      return obj
+        .replace('portfolio or personal website', 'resume portfolio and LinkedIn showcase')
+        .replace('target role', 'desired position');
+    }
+    return obj;
+  });
+}
+
+/**
+ * Get the dynamic roadmap plan based on the user's selected timeline and career goal
+ */
+export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal): RoadmapPlan {
+  const customizePhases = (phases: RoadmapPhase[]): RoadmapPhase[] => {
+    if (!goal) return phases;
+    return phases.map(phase => ({
+      ...phase,
+      objectives: customizeObjectivesForGoal(phase.objectives, goal),
+    }));
+  };
+
   switch (timeline) {
     case '1-3m':
-      return {
+      const sprint: RoadmapPlan = {
         name: '90-Day Career Sprint',
         totalDays: 90,
         strategy: 'sprint',
@@ -100,9 +133,10 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
           },
         ],
       };
+      return { ...sprint, phases: customizePhases(sprint.phases) };
 
     case '3-6m':
-      return {
+      const balanced: RoadmapPlan = {
         name: '180-Day Career Transition Roadmap',
         totalDays: 180,
         strategy: 'balanced',
@@ -219,9 +253,10 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
           },
         ],
       };
+      return { ...balanced, phases: customizePhases(balanced.phases) };
 
     case '6-12m':
-      return {
+      const sustainable: RoadmapPlan = {
         name: '365-Day Mastery Plan',
         totalDays: 365,
         strategy: 'sustainable',
@@ -373,9 +408,10 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
           },
         ],
       };
+      return { ...sustainable, phases: customizePhases(sustainable.phases) };
 
     case '12m+':
-      return {
+      const strategic: RoadmapPlan = {
         name: 'Long-term Growth Plan',
         totalDays: 540, // ~18 months
         strategy: 'strategic',
@@ -557,9 +593,10 @@ export function getRoadmapPlan(timeline: TransitionTimeline): RoadmapPlan {
           },
         ],
       };
+      return { ...strategic, phases: customizePhases(strategic.phases) };
 
     default:
-      return getRoadmapPlan('3-6m');
+      return getRoadmapPlan('3-6m', goal);
   }
 }
 

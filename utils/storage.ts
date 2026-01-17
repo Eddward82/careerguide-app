@@ -182,7 +182,8 @@ export const completeOnboarding = async (
   transitionTimeline: TransitionTimeline,
   transitionDriver?: TransitionDriver,
   planStartDate?: string,
-  planName?: string
+  planName?: string,
+  focusAreas?: string[]
 ): Promise<void> => {
   try {
     const profile = await getUserProfile();
@@ -194,6 +195,7 @@ export const completeOnboarding = async (
     profile.transitionDriver = transitionDriver;
     profile.planStartDate = planStartDate;
     profile.planName = planName;
+    profile.focusAreas = focusAreas;
     profile.hasCompletedOnboarding = true;
     await saveUserProfile(profile);
   } catch (error) {

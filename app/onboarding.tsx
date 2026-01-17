@@ -20,10 +20,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
-import { CareerGoal, TransitionTimeline, TransitionDriver, CoachingSession } from '@/types';
+import { CareerGoal, TransitionTimeline, TransitionDriver, CoachingSession, FocusArea } from '@/types';
 import { completeOnboarding, clearAllData, addCoachingSession } from '@/utils/storage';
 import { generateInitialPlan } from '@/utils/newellAi';
 import { getRoadmapPlan } from '@/utils/roadmap';
+import { getFocusAreasForGoal } from '@/utils/focusAreas';
 
 const { width } = Dimensions.get('window');
 
@@ -65,11 +66,12 @@ export default function OnboardingScreen() {
   const [currentRole, setCurrentRole] = useState('');
   const [yearsExperience, setYearsExperience] = useState(2);
   const [selectedTimeline, setSelectedTimeline] = useState<TransitionTimeline>('3-6m');
+  const [selectedFocusAreas, setSelectedFocusAreas] = useState<FocusArea[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [planName, setPlanName] = useState('');
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   // Ensure onboarding always starts at Step 1 (index 0)
   useEffect(() => {
@@ -133,8 +135,8 @@ export default function OnboardingScreen() {
     setIsLoading(true);
 
     try {
-      // Get the dynamic roadmap plan
-      const roadmapPlan = getRoadmapPlan(selectedTimeline);
+      // Get the dynamic roadmap plan based on goal and timeline
+      const roadmapPlan = getRoadmapPlan(selectedTimeline, selectedGoal);
       const planStartDate = new Date().toISOString();
 
       // Generate personalized initial plan using Newell AI
@@ -146,7 +148,8 @@ export default function OnboardingScreen() {
         yearsExperience,
         timelineLabel,
         selectedDriver || undefined,
-        roadmapPlan
+        roadmapPlan,
+        selectedFocusAreas
       );
 
       // Complete onboarding first
@@ -158,7 +161,8 @@ export default function OnboardingScreen() {
         selectedTimeline,
         selectedDriver || undefined,
         planStartDate,
-        roadmapPlan.name
+        roadmapPlan.name,
+        selectedFocusAreas
       );
 
       // Create and save the initial coaching session
@@ -237,9 +241,22 @@ export default function OnboardingScreen() {
         return currentRole.trim().length > 0;
       case 4:
         return true;
+      case 5:
+        return selectedFocusAreas.length > 0;
       default:
         return false;
     }
+  };
+
+  const toggleFocusArea = (areaId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedFocusAreas(prev => {
+      if (prev.includes(areaId)) {
+        return prev.filter(id => id !== areaId);
+      } else {
+        return [...prev, areaId];
+      }
+    });
   };
 
   if (isLoading) {
@@ -678,14 +695,117 @@ export default function OnboardingScreen() {
                   activeOpacity={0.8}
                 >
                   <Text style={styles.nextButtonText}>
-                    Create My Plan
+                    Continue
                   </Text>
                   <Ionicons
-                    name="rocket"
+                    name="arrow-forward"
                     size={20}
                     color={Colors.white}
                     style={styles.buttonIcon}
                   />
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Step 6: Focus Areas */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView
+            contentContainerStyle={styles.stepScrollInline}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.title}>What are your primary focus areas?</Text>
+            <Text style={styles.subtitle}>
+              Select the areas you want to prioritize (choose at least one)
+            </Text>
+
+            <View style={styles.focusAreasContainer}>
+              {selectedGoal && getFocusAreasForGoal(selectedGoal).map((area) => (
+                <TouchableOpacity
+                  key={area.id}
+                  style={[
+                    styles.focusAreaCard,
+                    selectedFocusAreas.includes(area.id) && styles.focusAreaCardSelected,
+                  ]}
+                  onPress={() => toggleFocusArea(area.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.focusAreaIcon,
+                    selectedFocusAreas.includes(area.id) && styles.focusAreaIconSelected,
+                  ]}>
+                    <Ionicons
+                      name={area.icon as any}
+                      size={24}
+                      color={selectedFocusAreas.includes(area.id) ? Colors.white : Colors.primary}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.focusAreaText,
+                      selectedFocusAreas.includes(area.id) && styles.focusAreaTextSelected,
+                    ]}
+                  >
+                    {area.label}
+                  </Text>
+                  {selectedFocusAreas.includes(area.id) && (
+                    <View style={styles.focusAreaCheckmark}>
+                      <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Visual confirmation of selection */}
+            {selectedFocusAreas.length > 0 && (
+              <Text style={styles.selectionConfirm}>
+                ✓ {selectedFocusAreas.length} area{selectedFocusAreas.length > 1 ? 's' : ''} selected
+              </Text>
+            )}
+
+            {/* INLINE NAVIGATION BUTTONS */}
+            <View style={styles.inlineButtonContainer}>
+              <TouchableOpacity
+                style={styles.inlineBackButton}
+                onPress={handleBack}
+              >
+                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+              </TouchableOpacity>
+
+              <Animated.View
+                style={[
+                  styles.inlineNextButtonContainer,
+                  { transform: [{ scale: buttonScale }] },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.inlineNextButton,
+                    selectedFocusAreas.length === 0 && styles.inlineNextButtonDisabled,
+                  ]}
+                  onPress={handleNext}
+                  disabled={selectedFocusAreas.length === 0}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.nextButtonText,
+                      selectedFocusAreas.length === 0 && styles.nextButtonTextDisabled,
+                    ]}
+                  >
+                    Create My Plan
+                  </Text>
+                  {selectedFocusAreas.length > 0 && (
+                    <Ionicons
+                      name="rocket"
+                      size={20}
+                      color={Colors.white}
+                      style={styles.buttonIcon}
+                    />
+                  )}
                 </TouchableOpacity>
               </Animated.View>
             </View>
@@ -1097,5 +1217,52 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  focusAreasContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  focusAreaCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.lightGray,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  focusAreaCardSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: '#F0F7FF',
+  },
+  focusAreaIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F0F7FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  focusAreaIconSelected: {
+    backgroundColor: Colors.primary,
+  },
+  focusAreaText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.navy,
+  },
+  focusAreaTextSelected: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  focusAreaCheckmark: {
+    marginLeft: 8,
   },
 });

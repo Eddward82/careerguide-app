@@ -7,10 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { RoadmapPlan, RoadmapPhase, getCurrentWeekInPhase, getPhaseCompletionPercentage, isPhaseCompleted } from '@/utils/roadmap';
+import { RoadmapPlan, getCurrentWeekInPhase, getPhaseCompletionPercentage, isPhaseCompleted } from '@/utils/roadmap';
+import { refineRoadmapWithAI } from '@/utils/newellAi';
+import { getUserProfile } from '@/utils/storage';
+import * as Haptics from 'expo-haptics';
+import { getFocusAreasForGoal, getIconForGoal } from '@/utils/focusAreas';
+import { UserProfile } from '@/types';
 
 interface EnhancedRoadmapModalProps {
   visible: boolean;
@@ -19,6 +25,7 @@ interface EnhancedRoadmapModalProps {
   currentDay?: number;
   onTaskToggle?: (phaseNumber: number, taskId: string) => void;
   onAdjustTimeline?: () => void;
+  onRoadmapRefined?: (refinedPlan: RoadmapPlan) => void;
 }
 
 export default function EnhancedRoadmapModal({
@@ -28,8 +35,22 @@ export default function EnhancedRoadmapModal({
   currentDay = 1,
   onTaskToggle,
   onAdjustTimeline,
+  onRoadmapRefined,
 }: EnhancedRoadmapModalProps) {
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set([1]));
+  const [isRefining, setIsRefining] = useState(false);
+  const [refinedPhases, setRefinedPhases] = useState<Map<number, string[]>>(new Map());
+  const [pulseAnim] = useState(new Animated.Value(1));
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  // Load user profile on mount
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      const profile = await getUserProfile();
+      setUserProfile(profile);
+    };
+    loadProfile();
+  }, []);
 
   const getPhaseStatus = (phaseIndex: number): 'completed' | 'current' | 'upcoming' => {
     const phase = roadmapPlan.phases[phaseIndex];
@@ -57,6 +78,73 @@ export default function EnhancedRoadmapModal({
       }
       return newSet;
     });
+  };
+
+  // Pulse animation for Refine with AI button
+  React.useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  const handleRefineWithAI = async () => {
+    try {
+      setIsRefining(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      const profile = await getUserProfile();
+
+      // Refine all phases
+      const newRefinedPhases = new Map<number, string[]>();
+
+      for (const phase of roadmapPlan.phases) {
+        const refinedObjectives = await refineRoadmapWithAI(
+          {
+            name: profile.name,
+            currentRole: profile.currentRole,
+            careerGoal: profile.careerGoal,
+            yearsExperience: profile.yearsExperience,
+            focusAreas: profile.focusAreas,
+          },
+          phase
+        );
+        newRefinedPhases.set(phase.number, refinedObjectives);
+      }
+
+      setRefinedPhases(newRefinedPhases);
+
+      // Notify parent component if callback is provided
+      if (onRoadmapRefined) {
+        const refinedPlan: RoadmapPlan = {
+          ...roadmapPlan,
+          phases: roadmapPlan.phases.map(phase => ({
+            ...phase,
+            objectives: newRefinedPhases.get(phase.number) || phase.objectives,
+          })),
+        };
+        onRoadmapRefined(refinedPlan);
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error('Error refining roadmap:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setIsRefining(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -103,7 +191,11 @@ export default function EnhancedRoadmapModal({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <Ionicons name="map" size={28} color="#4A90E2" />
+            <Ionicons
+              name={userProfile ? (getIconForGoal(userProfile.careerGoal) as any) : 'map'}
+              size={28}
+              color="#4A90E2"
+            />
             <View style={styles.headerText}>
               <Text style={styles.title}>{roadmapPlan.name}</Text>
               <Text style={styles.subtitle}>
@@ -116,6 +208,31 @@ export default function EnhancedRoadmapModal({
           </TouchableOpacity>
         </View>
 
+        {/* Focus Badges Section */}
+        {userProfile && userProfile.focusAreas && userProfile.focusAreas.length > 0 && (
+          <View style={styles.focusBadgesContainer}>
+            <Text style={styles.focusBadgesTitle}>Your Focus Areas:</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.focusBadgesScroll}
+            >
+              {userProfile.focusAreas.map((areaId) => {
+                const focusOption = getFocusAreasForGoal(userProfile.careerGoal).find(
+                  (opt) => opt.id === areaId
+                );
+                if (!focusOption) return null;
+                return (
+                  <View key={areaId} style={styles.focusBadge}>
+                    <Ionicons name={focusOption.icon as any} size={16} color={Colors.primary} />
+                    <Text style={styles.focusBadgeText}>{focusOption.label}</Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Adjust Timeline Button */}
         {onAdjustTimeline && (
           <TouchableOpacity style={styles.adjustButton} onPress={onAdjustTimeline}>
@@ -123,6 +240,29 @@ export default function EnhancedRoadmapModal({
             <Text style={styles.adjustButtonText}>Adjust Timeline</Text>
           </TouchableOpacity>
         )}
+
+        {/* Refine with AI Button */}
+        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+          <TouchableOpacity
+            style={styles.refineButton}
+            onPress={handleRefineWithAI}
+            disabled={isRefining}
+            activeOpacity={0.8}
+          >
+            {isRefining ? (
+              <>
+                <ActivityIndicator size="small" color={Colors.white} />
+                <Text style={styles.refineButtonText}>✨ Personalizing...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="sparkles" size={20} color={Colors.white} />
+                <Text style={styles.refineButtonText}>Refine with AI</Text>
+                <Ionicons name="sparkles" size={20} color={Colors.white} />
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* Phases List - Vertical Timeline */}
         <ScrollView
@@ -137,6 +277,8 @@ export default function EnhancedRoadmapModal({
               const isExpanded = expandedPhases.has(phase.number);
               const completion = getPhaseCompletionPercentage(phase);
               const currentWeek = status === 'current' ? getCurrentWeekInPhase(currentDay, phase, roadmapPlan) : null;
+              const displayObjectives = refinedPhases.get(phase.number) || phase.objectives;
+              const isRefined = refinedPhases.has(phase.number);
 
               return (
                 <View key={phase.number} style={styles.phaseWrapper}>
@@ -210,7 +352,24 @@ export default function EnhancedRoadmapModal({
                       {/* Expanded Content */}
                       {isExpanded && (
                         <View style={styles.expandedContent}>
+                          {isRefined && (
+                            <View style={styles.refinedBadge}>
+                              <Ionicons name="sparkles" size={16} color="#FFD700" />
+                              <Text style={styles.refinedBadgeText}>AI-Personalized</Text>
+                            </View>
+                          )}
                           <Text style={styles.phaseDescription}>{phase.description}</Text>
+
+                          {/* Objectives */}
+                          <View style={styles.objectivesSection}>
+                            <Text style={styles.objectivesSectionTitle}>Objectives:</Text>
+                            {displayObjectives.map((objective, idx) => (
+                              <View key={idx} style={styles.objectiveRow}>
+                                <Ionicons name="checkmark-circle-outline" size={18} color={Colors.primary} />
+                                <Text style={styles.objectiveText}>{objective}</Text>
+                              </View>
+                            ))}
+                          </View>
 
                           {/* Tasks */}
                           <View style={styles.tasksSection}>
@@ -571,5 +730,98 @@ const styles = StyleSheet.create({
     color: '#1A2332',
     lineHeight: 20,
     fontWeight: '500',
+  },
+  refineButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 24,
+    marginHorizontal: 24,
+    marginVertical: 12,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
+    gap: 8,
+  },
+  refineButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: 0.5,
+  },
+  refinedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF8DC',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 6,
+  },
+  refinedBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DAA520',
+    letterSpacing: 0.5,
+  },
+  objectivesSection: {
+    marginBottom: 16,
+  },
+  objectivesSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A2332',
+    marginBottom: 12,
+  },
+  objectiveRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+    gap: 8,
+  },
+  objectiveText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1A2332',
+    lineHeight: 20,
+  },
+  focusBadgesContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
+  },
+  focusBadgesTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.mediumGray,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  focusBadgesScroll: {
+    gap: 8,
+  },
+  focusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F7FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    gap: 6,
+  },
+  focusBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
   },
 });

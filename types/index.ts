@@ -47,6 +47,8 @@ export interface CoachingSession {
   progressLog?: string;
 }
 
+export type FocusArea = string;
+
 export interface UserProfile {
   // Onboarding info
   name: string;
@@ -55,6 +57,7 @@ export interface UserProfile {
   yearsExperience: number;
   transitionTimeline: TransitionTimeline;
   transitionDriver?: TransitionDriver;
+  focusAreas?: FocusArea[];
 
   // Roadmap tracking
   planStartDate?: string; // ISO date when the plan started

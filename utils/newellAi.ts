@@ -44,7 +44,8 @@ export const generateInitialPlan = async (
   yearsExperience: number,
   timeline: string,
   transitionDriver?: string,
-  roadmapPlan?: { name: string; strategy: string; totalDays: number }
+  roadmapPlan?: { name: string; strategy: string; totalDays: number },
+  focusAreas?: string[]
 ): Promise<string[]> => {
   try {
     // Import strategy context
@@ -63,9 +64,13 @@ export const generateInitialPlan = async (
       ? `\n\nROADMAP CONTEXT: ${name} is following the "${roadmapPlan.name}" (${roadmapPlan.totalDays} days). ${getStrategyContext(roadmapPlan.strategy as any)}`
       : '';
 
+    const focusAreasContext = focusAreas && focusAreas.length > 0
+      ? `\n\nFOCUS AREAS: ${name} wants to prioritize these areas: ${focusAreas.join(', ')}. Tailor your advice to emphasize these specific focus areas.`
+      : '';
+
     const prompt = `You are a professional career coach. Create a focused 3-step immediate action plan for ${name}, who is a ${currentRole} with ${yearsExperience} years of experience, transitioning to ${targetGoal} within ${timeline}.
 
-${driverContext}${roadmapContext}
+${driverContext}${roadmapContext}${focusAreasContext}
 
 Focus on:
 1. Identifying and leveraging transferable skills
@@ -258,5 +263,94 @@ Action Steps:
         'Take one concrete action today, no matter how small',
       ],
     };
+  }
+};
+
+/**
+ * Refine roadmap with AI to create hyper-personalized objectives
+ */
+export const refineRoadmapWithAI = async (
+  userProfile: {
+    name: string;
+    currentRole: string;
+    careerGoal: string;
+    yearsExperience: number;
+    focusAreas?: string[];
+  },
+  phase: {
+    number: number;
+    title: string;
+    description: string;
+    objectives: string[];
+  }
+): Promise<string[]> => {
+  try {
+    const { name, currentRole, careerGoal, yearsExperience, focusAreas } = userProfile;
+
+    const focusAreasText = focusAreas && focusAreas.length > 0
+      ? ` with focus on: ${focusAreas.join(', ')}`
+      : '';
+
+    const prompt = `You are a professional career coach. Personalize these career roadmap objectives for ${name}.
+
+USER PROFILE:
+- Current Role: ${currentRole}
+- Years of Experience: ${yearsExperience}
+- Career Goal: ${careerGoal}${focusAreasText}
+
+PHASE: ${phase.title} - ${phase.description}
+
+GENERIC OBJECTIVES:
+${phase.objectives.map((obj, i) => `${i + 1}. ${obj}`).join('\n')}
+
+Transform these generic objectives into specific, personalized actions that:
+1. Reference ${name}'s ${yearsExperience} years as a ${currentRole}
+2. Are specific to their transition to ${careerGoal}
+3. Include concrete examples relevant to their background
+4. Align with their focus areas${focusAreasText}
+
+For example, instead of "Update resume", say "Highlight your ${yearsExperience} years of ${currentRole} experience, emphasizing [specific transferable skills] for your ${careerGoal} transition"
+
+Return EXACTLY ${phase.objectives.length} personalized objectives, numbered 1-${phase.objectives.length}.`;
+
+    const response = await fetch(`${NEWELL_API_URL}/v1/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Project-ID': PROJECT_ID || '',
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        model: 'gpt-4o-mini',
+        temperature: 0.8, // Higher temperature for more creative personalization
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Newell AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiMessage = data.choices?.[0]?.message?.content || '';
+
+    // Parse the numbered objectives
+    const refinedObjectives = parseActionSteps(aiMessage);
+
+    // If we got the right number of objectives, return them
+    if (refinedObjectives.length >= phase.objectives.length) {
+      return refinedObjectives.slice(0, phase.objectives.length);
+    }
+
+    // Otherwise, return the original objectives
+    return phase.objectives;
+  } catch (error) {
+    console.error('Error refining roadmap with AI:', error);
+    // Return original objectives if AI refinement fails
+    return phase.objectives;
   }
 };
