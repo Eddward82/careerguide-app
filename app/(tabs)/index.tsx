@@ -17,6 +17,7 @@ import { getUserProfile, completeWeeklyChallenge } from '@/utils/storage';
 import { UserProfile } from '@/types';
 import { getCommunityStats } from '@/data/mockData';
 import { getRoadmapPlan, calculateCurrentDay, getProgressMessage } from '@/utils/roadmap';
+import RoadmapModal from '@/components/RoadmapModal';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   const [currentQuote, setCurrentQuote] = useState(motivationalQuotes[0]);
   const [pulseAnim] = useState(new Animated.Value(1));
   const [communityStats, setCommunityStats] = useState(getCommunityStats());
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -263,7 +265,7 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 style={styles.milestoneButton}
-                onPress={() => router.push('/history')}
+                onPress={() => setShowRoadmapModal(true)}
               >
                 <Text style={styles.milestoneButtonText}>View Full Roadmap</Text>
                 <Ionicons name="arrow-forward" size={18} color={Colors.primary} />
@@ -380,6 +382,18 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Roadmap Modal */}
+      {profile?.transitionTimeline && (
+        <RoadmapModal
+          visible={showRoadmapModal}
+          onClose={() => setShowRoadmapModal(false)}
+          roadmapPlan={getRoadmapPlan(profile.transitionTimeline)}
+          currentDay={
+            profile.planStartDate ? calculateCurrentDay(profile.planStartDate) : 1
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
