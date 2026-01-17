@@ -63,6 +63,18 @@ export default function HomeScreen() {
   const loadProfile = async () => {
     const userProfile = await getUserProfile();
     setProfile(userProfile);
+
+    // Debug logging to help identify First Milestone card visibility
+    if (userProfile) {
+      console.log('📊 Dashboard Profile State:', {
+        hasProfile: true,
+        sessionsCount: userProfile.sessions.length,
+        hasInitialSession: userProfile.sessions.length > 0 && userProfile.sessions[0]?.id.startsWith('initial-'),
+        firstSessionId: userProfile.sessions[0]?.id,
+        planName: userProfile.planName,
+        transitionTimeline: userProfile.transitionTimeline,
+      });
+    }
   };
 
   const selectRandomQuote = () => {
@@ -81,6 +93,10 @@ export default function HomeScreen() {
   };
 
   const hasAnySessions = profile && profile.sessions.length > 0;
+
+  // Check if user has the initial session (just completed onboarding)
+  const initialSession = profile?.sessions.find(s => s.id.startsWith('initial-'));
+  const isNewUser = initialSession && profile && profile.sessions.length <= 2; // Show for new users with 1-2 sessions
 
   return (
     <SafeAreaView style={styles.container}>
@@ -223,7 +239,7 @@ export default function HomeScreen() {
               <Text style={styles.emptyButtonText}>Get Your First Coaching</Text>
             </TouchableOpacity>
           </View>
-        ) : profile?.sessions.length === 1 && profile.sessions[0].id.startsWith('initial-') ? (
+        ) : isNewUser && initialSession ? (
           // Show personalized welcome card for first-time users with initial plan
           <>
             {/* Personalized Welcome Header */}
@@ -253,7 +269,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.milestoneContent}>
-                {profile.sessions[0].actionPlan.map((step, index) => (
+                {initialSession.actionPlan.map((step, index) => (
                   <View key={index} style={styles.milestoneStep}>
                     <View style={styles.milestoneStepNumber}>
                       <Text style={styles.milestoneStepNumberText}>{index + 1}</Text>
