@@ -64,16 +64,25 @@ export default function HomeScreen() {
     const userProfile = await getUserProfile();
     setProfile(userProfile);
 
-    // Debug logging to help identify First Milestone card visibility
+    // Enhanced debug logging for milestone card visibility
     if (userProfile) {
+      const initialSession = userProfile.sessions?.find(s => s.id.startsWith('initial-'));
+      const mostRecentSession = userProfile.sessions?.[0];
+
       console.log('📊 Dashboard Profile State:', {
         hasProfile: true,
-        sessionsCount: userProfile.sessions.length,
-        hasInitialSession: userProfile.sessions.length > 0 && userProfile.sessions[0]?.id.startsWith('initial-'),
-        firstSessionId: userProfile.sessions[0]?.id,
+        sessionsCount: userProfile.sessions?.length || 0,
+        allSessionIds: userProfile.sessions?.map(s => ({ id: s.id, hasActionPlan: !!s.actionPlan })) || [],
+        hasInitialSession: !!initialSession,
+        initialSessionId: initialSession?.id,
+        initialSessionHasActionPlan: !!initialSession?.actionPlan,
+        mostRecentSessionId: mostRecentSession?.id,
+        mostRecentHasActionPlan: !!mostRecentSession?.actionPlan,
         planName: userProfile.planName,
         transitionTimeline: userProfile.transitionTimeline,
       });
+    } else {
+      console.log('📊 Dashboard Profile State: No profile loaded');
     }
   };
 
@@ -94,9 +103,14 @@ export default function HomeScreen() {
 
   const hasAnySessions = profile && profile.sessions.length > 0;
 
-  // Check if user has the initial session (just completed onboarding)
+  // Robust milestone detection: show initial session if exists, otherwise show most recent
   const initialSession = profile?.sessions.find(s => s.id.startsWith('initial-'));
-  const isNewUser = initialSession && profile && profile.sessions.length <= 2; // Show for new users with 1-2 sessions
+  const mostRecentSession = profile?.sessions?.[0];
+
+  // Always show milestone card if user has any session with actionPlan
+  const milestoneSession = initialSession || mostRecentSession;
+  const showMilestoneCard = hasAnySessions && milestoneSession && milestoneSession.actionPlan && milestoneSession.actionPlan.length > 0;
+  const isInitialMilestone = !!initialSession;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -239,29 +253,33 @@ export default function HomeScreen() {
               <Text style={styles.emptyButtonText}>Get Your First Coaching</Text>
             </TouchableOpacity>
           </View>
-        ) : isNewUser && initialSession ? (
-          // Show personalized welcome card for first-time users with initial plan
+        ) : showMilestoneCard && milestoneSession && profile ? (
+          // Show milestone card whenever user has actionable steps
           <>
-            {/* Personalized Welcome Header */}
-            <View style={styles.welcomeHeader}>
-              <Text style={styles.welcomeTitle}>
-                Welcome, {profile.name}! 🎉
-              </Text>
-              <Text style={styles.welcomeSubtitle}>
-                We&apos;re starting your journey from{' '}
-                <Text style={styles.welcomeHighlight}>{profile.currentRole}</Text> to{' '}
-                <Text style={styles.welcomeHighlight}>{profile.careerGoal}</Text>.
-              </Text>
-            </View>
+            {/* Personalized Welcome Header - only show for initial milestone */}
+            {isInitialMilestone && (
+              <View style={styles.welcomeHeader}>
+                <Text style={styles.welcomeTitle}>
+                  Welcome, {profile.name}! 🎉
+                </Text>
+                <Text style={styles.welcomeSubtitle}>
+                  We&apos;re starting your journey from{' '}
+                  <Text style={styles.welcomeHighlight}>{profile.currentRole}</Text> to{' '}
+                  <Text style={styles.welcomeHighlight}>{profile.careerGoal}</Text>.
+                </Text>
+              </View>
+            )}
 
-            {/* First Milestone Card */}
+            {/* Milestone Card - Dynamic title based on whether it's initial or current */}
             <View style={styles.milestoneCard}>
               <View style={styles.milestoneHeader}>
                 <View style={styles.milestoneIconContainer}>
                   <Ionicons name="flag" size={24} color={Colors.primary} />
                 </View>
                 <View style={styles.milestoneHeaderText}>
-                  <Text style={styles.milestoneTitle}>Your First Milestone</Text>
+                  <Text style={styles.milestoneTitle}>
+                    {isInitialMilestone ? 'Your First Milestone' : 'Current Milestone'}
+                  </Text>
                   <Text style={styles.milestoneSubtitle}>
                     AI-curated action plan for you
                   </Text>
@@ -269,7 +287,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.milestoneContent}>
-                {initialSession.actionPlan.map((step, index) => (
+                {milestoneSession.actionPlan.map((step, index) => (
                   <View key={index} style={styles.milestoneStep}>
                     <View style={styles.milestoneStepNumber}>
                       <Text style={styles.milestoneStepNumberText}>{index + 1}</Text>
