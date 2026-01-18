@@ -55,6 +55,7 @@ export interface UserProfile {
   // Onboarding info
   name: string;
   careerGoal: CareerGoal;
+  targetRole?: string; // NEW: Specific target role/industry (e.g., "Frontend Developer", "Marketing")
   currentRole: string;
   yearsExperience: number;
   transitionTimeline: TransitionTimeline;

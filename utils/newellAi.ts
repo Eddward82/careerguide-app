@@ -45,7 +45,8 @@ export const generateInitialPlan = async (
   timeline: string,
   transitionDriver?: string,
   roadmapPlan?: { name: string; strategy: string; totalDays: number; phases?: Array<{ number: number; title: string; objectives: string[] }> },
-  focusAreas?: string[]
+  focusAreas?: string[],
+  targetRole?: string
 ): Promise<string[]> => {
   try {
     // Import strategy context
@@ -54,12 +55,16 @@ export const generateInitialPlan = async (
     // Get Phase 1 objectives for context
     const phase1Objectives = roadmapPlan?.phases?.[0]?.objectives || [];
 
-    // Create hyper-personalized prompt
+    // Create hyper-personalized prompt with DUAL-CONTEXT ANALYSIS
     const identityContext = `${name}, a ${currentRole} with ${yearsExperience} years of experience`;
 
-    const visionContext = targetGoal + (focusAreas && focusAreas.length > 0
-      ? ` (specifically focusing on: ${focusAreas.join(', ')})`
-      : '');
+    // Build target vision with specific role if provided (HYPER-PRECISION)
+    let visionContext = targetGoal;
+    if (targetRole) {
+      visionContext = `${targetGoal} (specifically targeting: ${targetRole})`;
+    } else if (focusAreas && focusAreas.length > 0) {
+      visionContext = `${targetGoal} (focusing on: ${focusAreas.join(', ')})`;
+    }
 
     // Add specialized context for new career paths
     let specializedContext = '';
@@ -95,9 +100,14 @@ Provide word-for-word scripts and high-stakes meeting preparation tactics.`;
       ? `\n\n🎯 PHASE 1 OBJECTIVES (Foundation):\n${phase1Objectives.map((obj, i) => `${i + 1}. ${obj}`).join('\n')}\n\nYour 3 immediate action steps should directly support these Phase 1 objectives.`
       : '';
 
+    // DUAL-CONTEXT: Emphasize both current AND target roles
+    const transitionContext = targetRole
+      ? `\n\n🎯 TRANSITION PATHWAY: ${name} is transitioning FROM ${currentRole} TO ${targetRole}. Every action step MUST reference BOTH roles to show the bridge between where they are and where they're going.`
+      : '';
+
     const prompt = `You are an elite career transition coach working 1-on-1 with ${identityContext}.
 
-🎯 MISSION: Create a personalized "First Milestone" - 3 immediate, high-impact action steps for ${name}'s transition from ${currentRole} to ${visionContext}.
+🎯 MISSION: Create a personalized "First Milestone" - 3 immediate, high-impact action steps for ${name}'s transition from ${currentRole} to ${visionContext}.${transitionContext}
 
 👤 CLIENT PROFILE:
 - Current: ${currentRole} (${yearsExperience} years)
@@ -114,13 +124,15 @@ Provide word-for-word scripts and high-stakes meeting preparation tactics.`;
 ✅ INSTEAD, BE HYPER-SPECIFIC:
 - Reference ${name}'s ${yearsExperience} years as ${currentRole} explicitly
 - Name specific skills from their background that transfer (e.g., if retail: customer service, inventory management, sales targets)
-- Suggest concrete, named tools/platforms/resources
+- Suggest concrete, named tools/platforms/resources ${targetRole ? `relevant to ${targetRole}` : ''}
 - Include real-world examples specific to their situation
 - Make each step feel like it was written by someone who deeply understands their unique journey
+${targetRole ? `- MANDATORY: Mention "${targetRole}" in at least 2 out of 3 action steps` : ''}
 
 📝 EXAMPLE OF GOOD VS BAD:
 ❌ BAD (template): "Update your resume to highlight transferable skills"
-✅ GOOD (personalized): "Revise your resume's 'Professional Experience' section to reframe your ${yearsExperience} years managing teams in ${currentRole} as 'Cross-Functional Leadership' - emphasize how you coordinated with vendors (=stakeholder management) and optimized shift schedules (=resource allocation), skills directly relevant to ${targetGoal}"
+✅ GOOD (personalized): "Revise your resume's 'Professional Experience' section to reframe your ${yearsExperience} years managing teams in ${currentRole} as 'Cross-Functional Leadership' - emphasize how you coordinated with vendors (=stakeholder management) and optimized shift schedules (=resource allocation), skills directly relevant to ${targetRole || targetGoal}"
+${targetRole ? `\n❌ BAD: "Connect with 3 professionals in your field"\n✅ GOOD: "Connect with 3 ${targetRole} professionals on LinkedIn who successfully transitioned from ${currentRole} - send personalized messages mentioning specific projects they worked on"` : ''}
 
 Return EXACTLY 3 action steps numbered 1-3. Each should be 2-3 sentences long, ultra-specific, and immediately actionable THIS WEEK.`;
 
@@ -284,14 +296,19 @@ export const generateCoachingAdvice = async (
     yearsExperience: number;
     focusAreas?: string[];
     transitionDriver?: string;
+    targetRole?: string;
   }
 ): Promise<{ advice: string; actionPlan: string[] }> => {
   try {
-    const { name, currentRole, targetGoal, yearsExperience, focusAreas, transitionDriver } = userProfile;
+    const { name, currentRole, targetGoal, yearsExperience, focusAreas, transitionDriver, targetRole } = userProfile;
 
-    const focusContext = focusAreas && focusAreas.length > 0
-      ? ` with focus areas: ${focusAreas.join(', ')}`
-      : '';
+    // Build target context with hyper-precision
+    let focusContext = '';
+    if (targetRole) {
+      focusContext = ` targeting ${targetRole}`;
+    } else if (focusAreas && focusAreas.length > 0) {
+      focusContext = ` with focus areas: ${focusAreas.join(', ')}`;
+    }
 
     const driverContext = transitionDriver
       ? ` Their core motivation is: ${transitionDriver}.`
@@ -305,16 +322,21 @@ export const generateCoachingAdvice = async (
       coachingStyle = `\n\n💼 COACHING STYLE: Act as a "Negotiation Coach." Provide word-for-word scripts, psychological tactics for high-stakes meetings, and strategies for quantifying impact. Help them build a bulletproof case for promotion/raise.`;
     }
 
+    // Dual-context for coaching
+    const targetContext = targetRole
+      ? `\n\n🎯 TRANSITION CONTEXT: ${name} is moving FROM ${currentRole} TO ${targetRole}. All advice must acknowledge both their current expertise and target destination.`
+      : '';
+
     const prompt = `You are an elite career coach in a 1-on-1 session with ${name}.
 
 👤 CLIENT CONTEXT:
 - Current: ${currentRole} (${yearsExperience} years)
-- Target: ${targetGoal}${focusContext}${driverContext}${coachingStyle}
+- Target: ${targetGoal}${focusContext}${driverContext}${targetContext}${coachingStyle}
 
 💬 CHALLENGE: "${challenge}"
 
 🎯 YOUR MISSION:
-1. Give a brief, empathetic response (2-3 sentences) that shows you understand their specific situation. Reference their ${yearsExperience} years in ${currentRole} or their transition to ${targetGoal} to make it personal.
+1. Give a brief, empathetic response (2-3 sentences) that shows you understand their specific situation. Reference their ${yearsExperience} years in ${currentRole} ${targetRole ? `and their goal to become a ${targetRole}` : `or their transition to ${targetGoal}`} to make it personal.
 
 2. Provide 3 ultra-specific, immediately actionable steps to address this challenge.
 
@@ -326,6 +348,7 @@ export const generateCoachingAdvice = async (
 ✅ INSTEAD, BE SPECIFIC:
 - Name concrete tools, platforms, or resources (e.g., "Use Notion to...", "Join the r/cscareerquestions subreddit")
 - Reference their background explicitly (e.g., "Your ${yearsExperience} years in ${currentRole} means you already have...")
+${targetRole ? `- MANDATORY: Reference "${targetRole}" in at least 2 action steps` : ''}
 - Give exact time allocations (e.g., "Spend 30 minutes today...")
 - Include real-world examples relevant to their situation
 
@@ -400,6 +423,7 @@ export const refineRoadmapWithAI = async (
     careerGoal: string;
     yearsExperience: number;
     focusAreas?: string[];
+    targetRole?: string;
   },
   phase: {
     number: number;
@@ -409,18 +433,23 @@ export const refineRoadmapWithAI = async (
   }
 ): Promise<string[]> => {
   try {
-    const { name, currentRole, careerGoal, yearsExperience, focusAreas } = userProfile;
+    const { name, currentRole, careerGoal, yearsExperience, focusAreas, targetRole } = userProfile;
 
-    const focusAreasText = focusAreas && focusAreas.length > 0
-      ? ` with focus on: ${focusAreas.join(', ')}`
-      : '';
+    // Build target context with hyper-precision
+    let targetContext = '';
+    if (targetRole) {
+      targetContext = ` targeting ${targetRole}`;
+    } else if (focusAreas && focusAreas.length > 0) {
+      targetContext = ` with focus on: ${focusAreas.join(', ')}`;
+    }
 
     const prompt = `You are a professional career coach. Personalize these career roadmap objectives for ${name}.
 
 USER PROFILE:
 - Current Role: ${currentRole}
 - Years of Experience: ${yearsExperience}
-- Career Goal: ${careerGoal}${focusAreasText}
+- Career Goal: ${careerGoal}${targetContext}
+${targetRole ? `- Target Role: ${targetRole} (MUST reference this in objectives)` : ''}
 
 PHASE: ${phase.title} - ${phase.description}
 
@@ -429,11 +458,11 @@ ${phase.objectives.map((obj, i) => `${i + 1}. ${obj}`).join('\n')}
 
 Transform these generic objectives into specific, personalized actions that:
 1. Reference ${name}'s ${yearsExperience} years as a ${currentRole}
-2. Are specific to their transition to ${careerGoal}
+2. Are specific to their transition to ${targetRole || careerGoal}
 3. Include concrete examples relevant to their background
-4. Align with their focus areas${focusAreasText}
+${targetRole ? `4. Mention "${targetRole}" in at least 60% of objectives` : `4. Align with their focus areas${targetContext}`}
 
-For example, instead of "Update resume", say "Highlight your ${yearsExperience} years of ${currentRole} experience, emphasizing [specific transferable skills] for your ${careerGoal} transition"
+For example, instead of "Update resume", say "Highlight your ${yearsExperience} years of ${currentRole} experience, emphasizing [specific transferable skills] for your ${targetRole || careerGoal} transition"
 
 Return EXACTLY ${phase.objectives.length} personalized objectives, numbered 1-${phase.objectives.length}.`;
 
@@ -490,6 +519,7 @@ export const deepCustomizeRoadmap = async (
     careerGoal: string;
     yearsExperience: number;
     focusAreas?: string[];
+    targetRole?: string;
   },
   phase: {
     number: number;

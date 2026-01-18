@@ -284,6 +284,11 @@ export default function HomeScreen() {
               </View>
               <View style={styles.roadmapHeaderText}>
                 <Text style={styles.roadmapPlanName}>{profile.planName}</Text>
+                {profile.targetRole && (
+                  <Text style={styles.targetRoleHighlight}>
+                    🎯 Target: {profile.targetRole}
+                  </Text>
+                )}
                 <Text style={styles.roadmapSubtitle}>
                   Day {calculateCurrentDay(profile.planStartDate)} of{' '}
                   {getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays}
@@ -686,6 +691,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.navy,
     marginBottom: 4,
+  },
+  targetRoleHighlight: {
+    fontSize: 14,
+    color: '#4A90E2', // Sky Blue - HYPER-PRECISION highlight
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   roadmapSubtitle: {
     fontSize: 14,

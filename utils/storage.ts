@@ -183,12 +183,14 @@ export const completeOnboarding = async (
   transitionDriver?: TransitionDriver,
   planStartDate?: string,
   planName?: string,
-  focusAreas?: string[]
+  focusAreas?: string[],
+  targetRole?: string
 ): Promise<void> => {
   try {
     const profile = await getUserProfile();
     profile.name = name;
     profile.careerGoal = careerGoal;
+    profile.targetRole = targetRole;
     profile.currentRole = currentRole;
     profile.yearsExperience = yearsExperience;
     profile.transitionTimeline = transitionTimeline;

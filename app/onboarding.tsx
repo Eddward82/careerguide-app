@@ -54,6 +54,28 @@ const transitionDrivers: TransitionDriver[] = [
   'Personal Development',
 ];
 
+// Dynamic target role options based on career goal
+const getTargetRoleOptions = (goal: CareerGoal | null): string[] => {
+  if (!goal) return [];
+
+  switch (goal) {
+    case 'Switching to Tech':
+      return ['Frontend Developer', 'Backend Developer', 'Data Scientist', 'Product Manager', 'DevOps Engineer', 'QA Engineer', 'Other'];
+    case 'Moving to Management':
+      return ['Engineering Manager', 'Product Manager', 'Sales Manager', 'Marketing Manager', 'Operations Manager', 'Other'];
+    case 'Freelance/Startup Path':
+      return ['Web Design', 'Copywriting', 'Consulting', 'Marketing', 'Development', 'Design', 'Other'];
+    case 'Salary Negotiation & Promotion':
+      return ['Tech', 'Finance', 'Marketing', 'Sales', 'Operations', 'Healthcare', 'Other'];
+    case 'Career Pivot':
+    case 'Skill Development':
+    case 'Resume Refresh':
+      return []; // These will use text input
+    default:
+      return [];
+  }
+};
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -64,6 +86,7 @@ export default function OnboardingScreen() {
   // Form data
   const [name, setName] = useState('');
   const [selectedGoal, setSelectedGoal] = useState<CareerGoal | null>(null);
+  const [targetRole, setTargetRole] = useState(''); // NEW: Target role/industry
   const [selectedDriver, setSelectedDriver] = useState<TransitionDriver | null>(null);
   const [currentRole, setCurrentRole] = useState('');
   const [yearsExperience, setYearsExperience] = useState(2);
@@ -73,7 +96,7 @@ export default function OnboardingScreen() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [planName, setPlanName] = useState('');
 
-  const totalSteps = 6;
+  const totalSteps = 7; // Updated from 6 to 7
 
   // Ensure onboarding always starts at Step 1 (index 0)
   useEffect(() => {
@@ -151,7 +174,8 @@ export default function OnboardingScreen() {
         timelineLabel,
         selectedDriver || undefined,
         roadmapPlan,
-        selectedFocusAreas
+        selectedFocusAreas,
+        targetRole
       );
 
       // Complete onboarding first
@@ -164,7 +188,8 @@ export default function OnboardingScreen() {
         selectedDriver || undefined,
         planStartDate,
         roadmapPlan.name,
-        selectedFocusAreas
+        selectedFocusAreas,
+        targetRole
       );
 
       // Create and save the initial coaching session
@@ -236,14 +261,16 @@ export default function OnboardingScreen() {
       case 0:
         return selectedGoal !== null;
       case 1:
-        return selectedDriver !== null;
+        return targetRole.trim().length > 0; // NEW: Target role step
       case 2:
-        return name.trim().length > 0;
+        return selectedDriver !== null;
       case 3:
-        return currentRole.trim().length > 0;
+        return name.trim().length > 0;
       case 4:
-        return true;
+        return currentRole.trim().length > 0;
       case 5:
+        return true;
+      case 6:
         return selectedFocusAreas.length > 0;
       default:
         return false;
@@ -386,7 +413,91 @@ export default function OnboardingScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 2: Transition Driver */}
+        {/* Step 2: Target Role/Industry (NEW - HYPER-PRECISION) */}
+        <View style={[styles.step, { width }]}>
+          <ScrollView contentContainerStyle={styles.stepScroll}>
+            <Text style={styles.title}>
+              {selectedGoal === 'Switching to Tech' && "What's your target tech role?"}
+              {selectedGoal === 'Moving to Management' && "Which management path interests you?"}
+              {selectedGoal === 'Freelance/Startup Path' && "What's your freelance niche?"}
+              {selectedGoal === 'Salary Negotiation & Promotion' && "What industry are you in?"}
+              {(selectedGoal === 'Career Pivot' || selectedGoal === 'Skill Development' || selectedGoal === 'Resume Refresh') && "What's your target role or industry?"}
+            </Text>
+            <Text style={styles.subtitle}>
+              This helps us give you industry-specific advice
+            </Text>
+
+            {/* Show cards for specific career goals */}
+            {getTargetRoleOptions(selectedGoal).length > 0 ? (
+              <View style={styles.optionsContainer}>
+                {getTargetRoleOptions(selectedGoal).map((role) => (
+                  <TouchableOpacity
+                    key={role}
+                    style={[
+                      styles.optionCard,
+                      targetRole === role && styles.optionCardSelected,
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setTargetRole(role);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.optionContent}>
+                      <View
+                        style={[
+                          styles.radioButton,
+                          targetRole === role && styles.radioButtonSelected,
+                        ]}
+                      >
+                        {targetRole === role && (
+                          <View style={styles.radioButtonInner} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.optionText,
+                          targetRole === role && styles.optionTextSelected,
+                        ]}
+                      >
+                        {role}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              /* Show text input for Career Pivot, Skill Development, Resume Refresh */
+              <View style={styles.inputCard}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Marketing Manager, Healthcare, Finance"
+                  placeholderTextColor={Colors.mediumGray}
+                  value={targetRole}
+                  onChangeText={setTargetRole}
+                  autoCapitalize="words"
+                  autoFocus={currentStep === 1}
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    if (targetRole.trim().length > 0) {
+                      handleNext();
+                    }
+                  }}
+                  blurOnSubmit={false}
+                />
+              </View>
+            )}
+
+            {/* Visual confirmation */}
+            {targetRole.trim().length > 0 && (
+              <Text style={styles.selectionConfirm}>
+                ✓ {targetRole} selected
+              </Text>
+            )}
+          </ScrollView>
+        </View>
+
+        {/* Step 3: Transition Driver */}
         <View style={[styles.step, { width }]}>
           <ScrollView contentContainerStyle={styles.stepScroll}>
             <Text style={styles.title}>What&apos;s driving this transition?</Text>
@@ -432,7 +543,7 @@ export default function OnboardingScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 3: Name */}
+        {/* Step 4: Name */}
         <View style={[styles.step, { width }]}>
           <ScrollView
             contentContainerStyle={styles.stepScrollInline}
@@ -452,7 +563,7 @@ export default function OnboardingScreen() {
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
-                autoFocus={currentStep === 2}
+                autoFocus={currentStep === 3}
                 returnKeyType="done"
                 onSubmitEditing={() => {
                   if (name.trim().length > 0) {
@@ -519,7 +630,7 @@ export default function OnboardingScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 3: Current Role & Experience */}
+        {/* Step 5: Current Role & Experience */}
         <View style={[styles.step, { width }]}>
           <ScrollView
             contentContainerStyle={styles.stepScrollInline}
@@ -617,7 +728,7 @@ export default function OnboardingScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 4: Timeline */}
+        {/* Step 6: Timeline */}
         <View style={[styles.step, { width }]}>
           <ScrollView
             contentContainerStyle={styles.stepScrollInline}
@@ -711,7 +822,7 @@ export default function OnboardingScreen() {
           </ScrollView>
         </View>
 
-        {/* Step 6: Focus Areas */}
+        {/* Step 7: Focus Areas */}
         <View style={[styles.step, { width }]}>
           <ScrollView
             contentContainerStyle={styles.stepScrollInline}
@@ -815,8 +926,8 @@ export default function OnboardingScreen() {
         </View>
         </Animated.View>
 
-        {/* Navigation Buttons - Only show for steps 0 and 1 (Career Goal and Transition Driver - steps without inline buttons) */}
-        {(currentStep === 0 || currentStep === 1) && (
+        {/* Navigation Buttons - Only show for steps 0, 1, 2 (Career Goal, Target Role, and Transition Driver - steps without inline buttons) */}
+        {(currentStep === 0 || currentStep === 1 || currentStep === 2) && (
           <View
             style={[
               styles.navigationContainer,

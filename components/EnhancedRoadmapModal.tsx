@@ -128,6 +128,7 @@ export default function EnhancedRoadmapModal({
             careerGoal: profile.careerGoal,
             yearsExperience: profile.yearsExperience,
             focusAreas: profile.focusAreas,
+            targetRole: profile.targetRole,
           },
           phase,
           customizationData
@@ -253,6 +254,11 @@ export default function EnhancedRoadmapModal({
             />
             <View style={styles.headerText}>
               <Text style={styles.title}>{roadmapPlan.name}</Text>
+              {userProfile?.targetRole && (
+                <Text style={styles.targetRoleHighlight}>
+                  🎯 Target: {userProfile.targetRole}
+                </Text>
+              )}
               <Text style={styles.subtitle}>
                 {roadmapPlan.phases.length} phase roadmap to your goal
               </Text>
@@ -559,6 +565,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A2332', // Deep Navy
     marginBottom: 4,
+  },
+  targetRoleHighlight: {
+    fontSize: 14,
+    color: '#4A90E2', // Sky Blue - HYPER-PRECISION
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 14,
