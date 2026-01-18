@@ -18,6 +18,7 @@ import { getFocusAreasForGoal, getIconForGoal } from '@/utils/focusAreas';
 import { UserProfile } from '@/types';
 import CustomizePlanModal from './CustomizePlanModal';
 import RegeneratingPlanAnimation from './RegeneratingPlanAnimation';
+import Toast from './Toast';
 
 interface EnhancedRoadmapModalProps {
   visible: boolean;
@@ -45,6 +46,9 @@ export default function EnhancedRoadmapModal({
   const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
 
   // Load user profile on mount
   React.useEffect(() => {
@@ -111,8 +115,10 @@ export default function EnhancedRoadmapModal({
 
       const profile = await getUserProfile();
 
-      // Deep customize all phases
+      // Deep customize all phases and track success
       const newCustomizedPhases = new Map<number, { objectives: string[]; tasks: { id: string; text: string; isCompleted: boolean }[] }>();
+      let allSucceeded = true;
+      let successCount = 0;
 
       for (const phase of roadmapPlan.phases) {
         const customized = await deepCustomizeRoadmap(
@@ -126,34 +132,70 @@ export default function EnhancedRoadmapModal({
           phase,
           customizationData
         );
-        newCustomizedPhases.set(phase.number, customized);
+
+        // Only store if successfully customized
+        if (customized.success) {
+          newCustomizedPhases.set(phase.number, {
+            objectives: customized.objectives,
+            tasks: customized.tasks,
+          });
+          successCount++;
+        } else {
+          allSucceeded = false;
+        }
       }
 
-      setCustomizedPhases(newCustomizedPhases);
-      setIsCustomized(true);
+      setIsRegenerating(false);
 
-      // Notify parent component if callback is provided
-      if (onRoadmapRefined) {
-        const customizedPlan: RoadmapPlan = {
-          ...roadmapPlan,
-          phases: roadmapPlan.phases.map(phase => {
-            const customization = newCustomizedPhases.get(phase.number);
-            return {
-              ...phase,
-              objectives: customization?.objectives || phase.objectives,
-              tasks: customization?.tasks || phase.tasks,
-            };
-          }),
-        };
-        onRoadmapRefined(customizedPlan);
+      // Only set as customized if at least some phases succeeded
+      if (successCount > 0) {
+        setCustomizedPhases(newCustomizedPhases);
+        setIsCustomized(true);
+
+        // Notify parent component if callback is provided
+        if (onRoadmapRefined) {
+          const customizedPlan: RoadmapPlan = {
+            ...roadmapPlan,
+            phases: roadmapPlan.phases.map(phase => {
+              const customization = newCustomizedPhases.get(phase.number);
+              if (customization) {
+                return {
+                  ...phase,
+                  objectives: customization.objectives,
+                  tasks: customization.tasks,
+                };
+              }
+              return phase;
+            }),
+          };
+          onRoadmapRefined(customizedPlan);
+        }
+
+        // Show appropriate success message
+        if (allSucceeded) {
+          setToastType('success');
+          setToastMessage('🎉 Your roadmap has been fully customized!');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+          setToastType('info');
+          setToastMessage(`✨ Customized ${successCount} of ${roadmapPlan.phases.length} phases`);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
+        setShowToast(true);
+      } else {
+        // Complete failure - show error
+        setToastType('error');
+        setToastMessage('Failed to customize roadmap. Please try again.');
+        setShowToast(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error('Error customizing roadmap:', error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
       setIsRegenerating(false);
+      setToastType('error');
+      setToastMessage('An error occurred. Please try again.');
+      setShowToast(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
@@ -472,6 +514,14 @@ export default function EnhancedRoadmapModal({
 
       {/* Regenerating Plan Animation */}
       <RegeneratingPlanAnimation visible={isRegenerating} />
+
+      {/* Toast Notification */}
+      <Toast
+        visible={showToast}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setShowToast(false)}
+      />
     </Modal>
   );
 }
