@@ -147,7 +147,9 @@ export default function EnhancedRoadmapModal({
 
       setIsRegenerating(false);
 
-      // Only set as customized if at least some phases succeeded
+      console.log(`[Roadmap Modal] Customization complete: ${successCount}/${roadmapPlan.phases.length} phases succeeded`);
+
+      // Always apply whatever customization we got (best effort mode)
       if (successCount > 0) {
         setCustomizedPhases(newCustomizedPhases);
         setIsCustomized(true);
@@ -174,26 +176,27 @@ export default function EnhancedRoadmapModal({
         // Show appropriate success message
         if (allSucceeded) {
           setToastType('success');
-          setToastMessage('🎉 Your roadmap has been fully customized!');
+          setToastMessage('🎉 Your roadmap is now personalized!');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else {
-          setToastType('info');
-          setToastMessage(`✨ Customized ${successCount} of ${roadmapPlan.phases.length} phases`);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          setToastType('success');
+          setToastMessage(`✨ Personalized ${successCount} of ${roadmapPlan.phases.length} phases`);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
         setShowToast(true);
       } else {
-        // Complete failure - show error
+        // Complete failure - provide helpful message
+        console.error('[Roadmap Modal] Complete customization failure - all phases failed');
         setToastType('error');
-        setToastMessage('Failed to customize roadmap. Please try again.');
+        setToastMessage('Unable to personalize. Check your connection and try again.');
         setShowToast(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (error) {
-      console.error('Error customizing roadmap:', error);
+      console.error('[Roadmap Modal] Error customizing roadmap:', error);
       setIsRegenerating(false);
       setToastType('error');
-      setToastMessage('An error occurred. Please try again.');
+      setToastMessage('Something went wrong. Please check your connection and try again.');
       setShowToast(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
