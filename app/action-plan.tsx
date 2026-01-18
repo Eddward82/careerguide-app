@@ -125,7 +125,7 @@ export default function ActionPlanScreen() {
 
         <View style={styles.content}>
           <View style={styles.challengeCard}>
-            <Text style={styles.challengeLabel}>Based on your challenge:</Text>
+            <Text style={styles.challengeLabel}>BASED ON YOUR CHALLENGE</Text>
             <Text style={styles.challengeText}>{session.challenge}</Text>
           </View>
 
@@ -328,36 +328,42 @@ const styles = StyleSheet.create({
     color: Colors.navy,
   },
   content: {
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
   challengeCard: {
     backgroundColor: '#FFF3E0',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   challengeLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.mediumGray,
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   challengeText: {
     fontSize: 14,
     color: Colors.navy,
-    lineHeight: 20,
+    lineHeight: 21,
+    fontWeight: '500',
   },
   stepsContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   stepCard: {
     backgroundColor: Colors.white,
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     marginBottom: 12,
     flexDirection: 'row',
+    alignItems: 'flex-start',
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -365,43 +371,47 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   stepIconContainer: {
-    marginRight: 12,
-    paddingTop: 2,
+    marginRight: 14,
+    marginTop: 1,
   },
   stepContent: {
     flex: 1,
   },
   stepNumber: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.success,
-    marginBottom: 4,
+    marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   stepText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.navy,
-    lineHeight: 20,
+    lineHeight: 24,
+    fontWeight: '400',
   },
   aiNote: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F0F7FF',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 24,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 20,
   },
   aiNoteText: {
     fontSize: 12,
     color: Colors.primary,
-    marginLeft: 8,
+    marginLeft: 10,
     flex: 1,
+    lineHeight: 18,
   },
   logButton: {
     backgroundColor: Colors.success,
     borderRadius: 16,
-    padding: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     alignItems: 'center',
     shadowColor: Colors.success,
     shadowOffset: { width: 0, height: 4 },
