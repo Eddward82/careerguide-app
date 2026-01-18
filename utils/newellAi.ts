@@ -478,3 +478,162 @@ Return EXACTLY ${phase.objectives.length} personalized objectives, numbered 1-${
     return phase.objectives;
   }
 };
+
+/**
+ * Deep roadmap customization with custom user data
+ */
+export const deepCustomizeRoadmap = async (
+  userProfile: {
+    name: string;
+    currentRole: string;
+    careerGoal: string;
+    yearsExperience: number;
+    focusAreas?: string[];
+  },
+  phase: {
+    number: number;
+    title: string;
+    description: string;
+    objectives: string[];
+    tasks: Array<{ id: string; text: string; isCompleted: boolean }>;
+  },
+  customizationData: Record<string, string>
+): Promise<{
+  objectives: string[];
+  tasks: Array<{ id: string; text: string; isCompleted: boolean }>;
+}> => {
+  try {
+    const { name, currentRole, careerGoal, yearsExperience, focusAreas } = userProfile;
+
+    // Build custom context based on career goal
+    let customContext = '';
+    if (careerGoal === 'Freelance/Startup Path') {
+      customContext = `
+CUSTOM CONTEXT:
+- Niche/Service: ${customizationData.niche || 'Not specified'}
+- Target Clients: ${customizationData.targetClients || 'Not specified'}
+- Pricing Model: ${customizationData.pricingModel || 'Not specified'}
+
+Turn generic freelance advice into SPECIFIC actions for this exact niche and client type. For example:
+- Instead of "reach out to potential clients" → "reach out to ${customizationData.targetClients} specifically looking for ${customizationData.niche} services"
+- Instead of "set pricing" → "create ${customizationData.pricingModel} pricing packages for ${customizationData.niche}"
+- Instead of "build portfolio" → "create ${customizationData.niche} case studies targeting ${customizationData.targetClients}"`;
+    } else if (careerGoal === 'Salary Negotiation & Promotion') {
+      customContext = `
+CUSTOM CONTEXT:
+- Industry: ${customizationData.industry || 'Not specified'}
+- Current Level: ${customizationData.organizationLevel || 'Not specified'}
+- Target Increase: ${customizationData.targetIncrease || 'Not specified'}
+
+Turn generic negotiation advice into INDUSTRY-SPECIFIC and LEVEL-SPECIFIC tactics. For example:
+- Instead of "research market rates" → "research ${customizationData.industry} compensation for ${customizationData.organizationLevel} roles on Levels.fyi and Glassdoor"
+- Instead of "quantify impact" → "quantify business impact using ${customizationData.industry}-specific KPIs (revenue, cost savings, efficiency)"
+- Instead of "negotiate raise" → "prepare to negotiate ${customizationData.targetIncrease} increase based on ${customizationData.industry} market rates"`;
+    } else if (careerGoal === 'Switching to Tech') {
+      customContext = `
+CUSTOM CONTEXT:
+- Background: ${customizationData.background || 'Not specified'}
+- Target Role: ${customizationData.targetRole || 'Not specified'}
+- Coding Experience: ${customizationData.codingExperience || 'Not specified'}
+
+Turn generic tech transition advice into ROLE-SPECIFIC and BACKGROUND-SPECIFIC steps. For example:
+- Instead of "learn to code" → "learn ${customizationData.targetRole}-specific skills at ${customizationData.codingExperience} level"
+- Instead of "leverage transferable skills" → "leverage ${customizationData.background} experience to position for ${customizationData.targetRole} roles"
+- Instead of "build projects" → "build ${customizationData.targetRole} projects that showcase ${customizationData.background} domain expertise"`;
+    }
+
+    const focusContext = focusAreas && focusAreas.length > 0
+      ? `\nFocus Areas: ${focusAreas.join(', ')}`
+      : '';
+
+    const prompt = `You are an elite career strategist performing DEEP CUSTOMIZATION of a roadmap phase.
+
+CLIENT: ${name}, ${currentRole} with ${yearsExperience} years experience
+GOAL: ${careerGoal}${focusContext}
+
+${customContext}
+
+PHASE TO CUSTOMIZE:
+Phase ${phase.number}: ${phase.title}
+Description: ${phase.description}
+
+CURRENT OBJECTIVES:
+${phase.objectives.map((obj, i) => `${i + 1}. ${obj}`).join('\n')}
+
+CURRENT TASKS:
+${phase.tasks.map((task, i) => `${i + 1}. ${task.text}`).join('\n')}
+
+YOUR MISSION: Transform this GENERIC phase into a HYPER-SPECIFIC action plan using the custom context above.
+
+INSTRUCTIONS:
+1. Rewrite EVERY objective to be specific to the custom context (niche, industry, role, etc.)
+2. Rewrite EVERY task to be specific and actionable for this exact situation
+3. Keep the SAME NUMBER of objectives and tasks
+4. Make each objective and task extremely specific - use exact numbers, specific platforms, specific industries, etc.
+5. Replace ALL generic language with the specific details from the custom context
+
+OUTPUT FORMAT:
+Return ONLY a JSON object with this structure (NO markdown, NO code blocks, NO additional text):
+{
+  "objectives": ["specific objective 1", "specific objective 2", ...],
+  "tasks": ["specific task 1", "specific task 2", ...]
+}
+
+CRITICAL: Return ONLY the JSON object. No explanations, no markdown formatting.`;
+
+    const response = await fetch(`${NEWELL_API_URL}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        projectId: PROJECT_ID,
+        model: 'gpt-4o-mini',
+        systemPrompt: 'You are a precise career strategist. Return only valid JSON with no additional formatting or text.',
+        userMessage: prompt,
+        temperature: 0.8,
+        maxTokens: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    const data: NewellAIResponse = await response.json();
+
+    if (data.success && data.data?.message) {
+      try {
+        // Clean the response to extract JSON
+        let jsonString = data.data.message.trim();
+
+        // Remove markdown code blocks if present
+        jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+        // Try to find JSON object in the response
+        const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonString = jsonMatch[0];
+        }
+
+        const parsed = JSON.parse(jsonString);
+
+        return {
+          objectives: parsed.objectives || phase.objectives,
+          tasks: phase.tasks.map((task, i) => ({
+            ...task,
+            text: parsed.tasks?.[i] || task.text,
+          })),
+        };
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        return { objectives: phase.objectives, tasks: phase.tasks };
+      }
+    }
+
+    return { objectives: phase.objectives, tasks: phase.tasks };
+  } catch (error) {
+    console.error('Error in deep roadmap customization:', error);
+    return { objectives: phase.objectives, tasks: phase.tasks };
+  }
+};

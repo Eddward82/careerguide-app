@@ -7,16 +7,17 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { RoadmapPlan, getCurrentWeekInPhase, getPhaseCompletionPercentage, isPhaseCompleted } from '@/utils/roadmap';
-import { refineRoadmapWithAI } from '@/utils/newellAi';
+import { deepCustomizeRoadmap } from '@/utils/newellAi';
 import { getUserProfile } from '@/utils/storage';
 import * as Haptics from 'expo-haptics';
 import { getFocusAreasForGoal, getIconForGoal } from '@/utils/focusAreas';
 import { UserProfile } from '@/types';
+import CustomizePlanModal from './CustomizePlanModal';
+import RegeneratingPlanAnimation from './RegeneratingPlanAnimation';
 
 interface EnhancedRoadmapModalProps {
   visible: boolean;
@@ -38,8 +39,10 @@ export default function EnhancedRoadmapModal({
   onRoadmapRefined,
 }: EnhancedRoadmapModalProps) {
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set([1]));
-  const [isRefining, setIsRefining] = useState(false);
-  const [refinedPhases, setRefinedPhases] = useState<Map<number, string[]>>(new Map());
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isCustomized, setIsCustomized] = useState(false);
+  const [customizedPhases, setCustomizedPhases] = useState<Map<number, { objectives: string[]; tasks: { id: string; text: string; isCompleted: boolean }[] }>>(new Map());
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -100,18 +103,19 @@ export default function EnhancedRoadmapModal({
     return () => animation.stop();
   }, []);
 
-  const handleRefineWithAI = async () => {
+  const handleCustomizePlan = async (customizationData: Record<string, string>) => {
     try {
-      setIsRefining(true);
+      setShowCustomizeModal(false);
+      setIsRegenerating(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
       const profile = await getUserProfile();
 
-      // Refine all phases
-      const newRefinedPhases = new Map<number, string[]>();
+      // Deep customize all phases
+      const newCustomizedPhases = new Map<number, { objectives: string[]; tasks: { id: string; text: string; isCompleted: boolean }[] }>();
 
       for (const phase of roadmapPlan.phases) {
-        const refinedObjectives = await refineRoadmapWithAI(
+        const customized = await deepCustomizeRoadmap(
           {
             name: profile.name,
             currentRole: profile.currentRole,
@@ -119,31 +123,37 @@ export default function EnhancedRoadmapModal({
             yearsExperience: profile.yearsExperience,
             focusAreas: profile.focusAreas,
           },
-          phase
+          phase,
+          customizationData
         );
-        newRefinedPhases.set(phase.number, refinedObjectives);
+        newCustomizedPhases.set(phase.number, customized);
       }
 
-      setRefinedPhases(newRefinedPhases);
+      setCustomizedPhases(newCustomizedPhases);
+      setIsCustomized(true);
 
       // Notify parent component if callback is provided
       if (onRoadmapRefined) {
-        const refinedPlan: RoadmapPlan = {
+        const customizedPlan: RoadmapPlan = {
           ...roadmapPlan,
-          phases: roadmapPlan.phases.map(phase => ({
-            ...phase,
-            objectives: newRefinedPhases.get(phase.number) || phase.objectives,
-          })),
+          phases: roadmapPlan.phases.map(phase => {
+            const customization = newCustomizedPhases.get(phase.number);
+            return {
+              ...phase,
+              objectives: customization?.objectives || phase.objectives,
+              tasks: customization?.tasks || phase.tasks,
+            };
+          }),
         };
-        onRoadmapRefined(refinedPlan);
+        onRoadmapRefined(customizedPlan);
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error('Error refining roadmap:', error);
+      console.error('Error customizing roadmap:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
-      setIsRefining(false);
+      setIsRegenerating(false);
     }
   };
 
@@ -241,26 +251,28 @@ export default function EnhancedRoadmapModal({
           </TouchableOpacity>
         )}
 
-        {/* Refine with AI Button */}
+        {/* Customized Badge */}
+        {isCustomized && (
+          <View style={styles.customizedBanner}>
+            <Ionicons name="checkmark-circle" size={20} color="#7ED8B4" />
+            <Text style={styles.customizedBannerText}>✓ Your plan is now customized to your specific situation</Text>
+          </View>
+        )}
+
+        {/* Customize Your Plan Button */}
         <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
           <TouchableOpacity
-            style={styles.refineButton}
-            onPress={handleRefineWithAI}
-            disabled={isRefining}
+            style={styles.customizeButton}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowCustomizeModal(true);
+            }}
+            disabled={isRegenerating}
             activeOpacity={0.8}
           >
-            {isRefining ? (
-              <>
-                <ActivityIndicator size="small" color={Colors.white} />
-                <Text style={styles.refineButtonText}>✨ Personalizing...</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons name="sparkles" size={20} color={Colors.white} />
-                <Text style={styles.refineButtonText}>Refine with AI</Text>
-                <Ionicons name="sparkles" size={20} color={Colors.white} />
-              </>
-            )}
+            <Ionicons name="settings-sharp" size={20} color={Colors.white} />
+            <Text style={styles.customizeButtonText}>Customize Your Plan</Text>
+            <Ionicons name="arrow-forward" size={20} color={Colors.white} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -277,8 +289,10 @@ export default function EnhancedRoadmapModal({
               const isExpanded = expandedPhases.has(phase.number);
               const completion = getPhaseCompletionPercentage(phase);
               const currentWeek = status === 'current' ? getCurrentWeekInPhase(currentDay, phase, roadmapPlan) : null;
-              const displayObjectives = refinedPhases.get(phase.number) || phase.objectives;
-              const isRefined = refinedPhases.has(phase.number);
+              const customization = customizedPhases.get(phase.number);
+              const displayObjectives = customization?.objectives || phase.objectives;
+              const displayTasks = customization?.tasks || phase.tasks;
+              const isCustomizedPhase = customizedPhases.has(phase.number);
 
               return (
                 <View key={phase.number} style={styles.phaseWrapper}>
@@ -352,10 +366,10 @@ export default function EnhancedRoadmapModal({
                       {/* Expanded Content */}
                       {isExpanded && (
                         <View style={styles.expandedContent}>
-                          {isRefined && (
-                            <View style={styles.refinedBadge}>
-                              <Ionicons name="sparkles" size={16} color="#FFD700" />
-                              <Text style={styles.refinedBadgeText}>AI-Personalized</Text>
+                          {isCustomizedPhase && (
+                            <View style={styles.customizedPhaseBadge}>
+                              <Ionicons name="sparkles" size={16} color="#7ED8B4" />
+                              <Text style={styles.customizedPhaseBadgeText}>Customized for You</Text>
                             </View>
                           )}
                           <Text style={styles.phaseDescription}>{phase.description}</Text>
@@ -374,7 +388,7 @@ export default function EnhancedRoadmapModal({
                           {/* Tasks */}
                           <View style={styles.tasksSection}>
                             <Text style={styles.tasksSectionTitle}>Tasks:</Text>
-                            {phase.tasks.map((task) => (
+                            {displayTasks.map((task) => (
                               <TouchableOpacity
                                 key={task.id}
                                 style={styles.taskRow}
@@ -447,6 +461,17 @@ export default function EnhancedRoadmapModal({
           </View>
         </ScrollView>
       </View>
+
+      {/* Customize Plan Modal */}
+      <CustomizePlanModal
+        visible={showCustomizeModal}
+        onClose={() => setShowCustomizeModal(false)}
+        careerGoal={userProfile?.careerGoal || 'Skill Development'}
+        onSubmit={handleCustomizePlan}
+      />
+
+      {/* Regenerating Plan Animation */}
+      <RegeneratingPlanAnimation visible={isRegenerating} />
     </Modal>
   );
 }
@@ -731,44 +756,64 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '500',
   },
-  refineButton: {
+  customizeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#667eea',
+    backgroundColor: '#4A90E2',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 24,
     marginHorizontal: 24,
     marginVertical: 12,
-    shadowColor: '#667eea',
+    shadowColor: '#4A90E2',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 6,
     gap: 8,
   },
-  refineButtonText: {
+  customizeButtonText: {
     fontSize: 16,
     fontWeight: '700',
     color: Colors.white,
     letterSpacing: 0.5,
   },
-  refinedBadge: {
+  customizedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E3F9F4',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginHorizontal: 24,
+    marginTop: 12,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#7ED8B4',
+    gap: 10,
+  },
+  customizedBannerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A2332',
+    flex: 1,
+  },
+  customizedPhaseBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#FFF8DC',
+    backgroundColor: '#E3F9F4',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     marginBottom: 12,
     gap: 6,
   },
-  refinedBadgeText: {
+  customizedPhaseBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#DAA520',
+    color: '#7ED8B4',
     letterSpacing: 0.5,
   },
   objectivesSection: {
