@@ -309,7 +309,7 @@ function customizeObjectivesForGoal(objectives: string[], goal: CareerGoal): str
 /**
  * Get the dynamic roadmap plan based on the user's selected timeline and career goal
  */
-export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal): RoadmapPlan {
+export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal, targetRole?: string): RoadmapPlan {
   const customizePhases = (phases: RoadmapPhase[]): RoadmapPhase[] => {
     if (!goal) return phases;
     return phases.map(phase => ({
@@ -318,19 +318,37 @@ export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal):
     }));
   };
 
+  // Helper function to customize plan name with target role (HYPER-PRECISION)
+  const customizePlanName = (baseName: string): string => {
+    if (targetRole) {
+      // Replace generic terms with target role
+      // e.g., "90-Day Career Sprint" → "90-Day Frontend Developer Sprint"
+      return baseName.replace('Career', targetRole);
+    }
+    return baseName;
+  };
+
   // Special roadmaps for specific career goals
   if (goal === 'Freelance/Startup Path') {
-    return getFreelanceStartupRoadmap(timeline);
+    const plan = getFreelanceStartupRoadmap(timeline);
+    return {
+      ...plan,
+      name: customizePlanName(plan.name),
+    };
   }
 
   if (goal === 'Salary Negotiation & Promotion') {
-    return getSalaryPromotionRoadmap(timeline);
+    const plan = getSalaryPromotionRoadmap(timeline);
+    return {
+      ...plan,
+      name: customizePlanName(plan.name),
+    };
   }
 
   switch (timeline) {
     case '1-3m':
       const sprint: RoadmapPlan = {
-        name: '90-Day Career Sprint',
+        name: customizePlanName('90-Day Career Sprint'),
         totalDays: 90,
         strategy: 'sprint',
         phases: [
@@ -404,7 +422,7 @@ export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal):
 
     case '3-6m':
       const balanced: RoadmapPlan = {
-        name: '180-Day Career Transition Roadmap',
+        name: customizePlanName('180-Day Career Transition Roadmap'),
         totalDays: 180,
         strategy: 'balanced',
         phases: [
@@ -524,7 +542,7 @@ export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal):
 
     case '6-12m':
       const sustainable: RoadmapPlan = {
-        name: '365-Day Mastery Plan',
+        name: customizePlanName('365-Day Career Mastery Plan'),
         totalDays: 365,
         strategy: 'sustainable',
         phases: [
@@ -679,7 +697,7 @@ export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal):
 
     case '12m+':
       const strategic: RoadmapPlan = {
-        name: 'Long-term Growth Plan',
+        name: customizePlanName('Long-term Career Growth Plan'),
         totalDays: 540, // ~18 months
         strategy: 'strategic',
         phases: [

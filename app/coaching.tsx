@@ -83,7 +83,7 @@ export default function CoachingScreen() {
       let currentPhase = null;
       if (profile.transitionTimeline && profile.planStartDate) {
         try {
-          const plan = getRoadmapPlan(profile.transitionTimeline, profile.careerGoal);
+          const plan = getRoadmapPlan(profile.transitionTimeline, profile.careerGoal, profile.targetRole);
           const currentDay = calculateCurrentDay(profile.planStartDate);
           currentPhase = getCurrentPhase(currentDay, plan);
           phaseContext = getStrategyContext(plan.strategy, currentPhase, profile.careerGoal);

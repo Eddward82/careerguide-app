@@ -95,9 +95,9 @@ export default function HomeScreen() {
         setTimeout(() => setShowMondayCheckin(true), 1000);
       }
 
-      // Load roadmap plan with task completion states
+      // Load roadmap plan with task completion states (WITH TARGET ROLE - HYPER-PRECISION)
       if (userProfile.transitionTimeline) {
-        const plan = getRoadmapPlan(userProfile.transitionTimeline, userProfile.careerGoal);
+        const plan = getRoadmapPlan(userProfile.transitionTimeline, userProfile.careerGoal, userProfile.targetRole);
         const tasksCompleted = await getRoadmapTasksCompleted();
 
         // Update task completion states in the plan
@@ -291,7 +291,7 @@ export default function HomeScreen() {
                 )}
                 <Text style={styles.roadmapSubtitle}>
                   Day {calculateCurrentDay(profile.planStartDate)} of{' '}
-                  {getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays}
+                  {getRoadmapPlan(profile.transitionTimeline, profile.careerGoal, profile.targetRole).totalDays}
                 </Text>
               </View>
             </View>
@@ -303,7 +303,7 @@ export default function HomeScreen() {
                     {
                       width: `${Math.min(
                         (calculateCurrentDay(profile.planStartDate) /
-                          getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays) *
+                          getRoadmapPlan(profile.transitionTimeline, profile.careerGoal, profile.targetRole).totalDays) *
                           100,
                         100
                       )}%`,
@@ -315,7 +315,7 @@ export default function HomeScreen() {
                 {Math.min(
                   Math.round(
                     (calculateCurrentDay(profile.planStartDate) /
-                      getRoadmapPlan(profile.transitionTimeline, profile.careerGoal).totalDays) *
+                      getRoadmapPlan(profile.transitionTimeline, profile.careerGoal, profile.targetRole).totalDays) *
                       100
                   ),
                   100
@@ -511,7 +511,7 @@ export default function HomeScreen() {
                   <Text style={styles.streakSubtitle}>
                     {getProgressMessage(
                       calculateCurrentDay(profile.planStartDate),
-                      getRoadmapPlan(profile.transitionTimeline).totalDays,
+                      getRoadmapPlan(profile.transitionTimeline, profile.careerGoal, profile.targetRole).totalDays,
                       profile.planName
                     )}
                   </Text>

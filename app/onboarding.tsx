@@ -160,8 +160,8 @@ export default function OnboardingScreen() {
     setIsLoading(true);
 
     try {
-      // Get the dynamic roadmap plan based on goal and timeline
-      const roadmapPlan = getRoadmapPlan(selectedTimeline, selectedGoal);
+      // Get the dynamic roadmap plan based on goal and timeline (WITH TARGET ROLE - HYPER-PRECISION)
+      const roadmapPlan = getRoadmapPlan(selectedTimeline, selectedGoal, targetRole);
       const planStartDate = new Date().toISOString();
 
       // Generate personalized initial plan using Newell AI
@@ -303,7 +303,7 @@ export default function OnboardingScreen() {
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingTitle}>Preparing Your Plan...</Text>
           <Text style={styles.loadingSubtitle}>
-            Creating your personalized {getRoadmapPlan(selectedTimeline).name}
+            Creating your personalized {getRoadmapPlan(selectedTimeline, selectedGoal || undefined, targetRole).name}
           </Text>
         </View>
       </SafeAreaView>

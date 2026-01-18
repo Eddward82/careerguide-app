@@ -50,7 +50,7 @@ export default function ResourcesScreen() {
     // Get current phase for resource gating
     if (userProfile.transitionTimeline && userProfile.planStartDate) {
       try {
-        const plan = getRoadmapPlan(userProfile.transitionTimeline);
+        const plan = getRoadmapPlan(userProfile.transitionTimeline, userProfile.careerGoal, userProfile.targetRole);
         const currentDay = calculateCurrentDay(userProfile.planStartDate);
         const currentPhase = getCurrentPhase(currentDay, plan);
         setCurrentPhaseNumber(currentPhase.number);
