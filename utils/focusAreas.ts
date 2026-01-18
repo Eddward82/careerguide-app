@@ -61,6 +61,26 @@ export function getFocusAreasForGoal(goal: CareerGoal): FocusAreaOption[] {
         { id: 'domain', label: 'Domain Expertise', icon: 'school' },
       ];
 
+    case 'Freelance/Startup Path':
+      return [
+        { id: 'clientacquisition', label: 'Client Acquisition', icon: 'people' },
+        { id: 'portfoliobuilding', label: 'Portfolio Building', icon: 'briefcase' },
+        { id: 'pricingcontracts', label: 'Pricing & Contracts', icon: 'document-text' },
+        { id: 'branding', label: 'Branding', icon: 'sparkles' },
+        { id: 'nicheselection', label: 'Niche Selection', icon: 'compass' },
+        { id: 'productmarketfit', label: 'Product-Market Fit', icon: 'analytics' },
+      ];
+
+    case 'Salary Negotiation & Promotion':
+      return [
+        { id: 'quantifyingimpact', label: 'Quantifying Impact', icon: 'trending-up' },
+        { id: 'marketvalue', label: 'Market Value Analysis', icon: 'stats-chart' },
+        { id: 'executivepresence', label: 'Executive Presence', icon: 'star' },
+        { id: 'performancereviews', label: 'Performance Reviews', icon: 'clipboard' },
+        { id: 'benefitnegotiation', label: 'Benefit Negotiation', icon: 'cash' },
+        { id: 'internalnetworking', label: 'Internal Networking', icon: 'git-network' },
+      ];
+
     default:
       return [
         { id: 'general1', label: 'Professional Growth', icon: 'trending-up' },
@@ -88,7 +108,11 @@ export function getIconForGoal(goal: CareerGoal): string {
       return 'git-branch';
     case 'Skill Development':
       return 'school';
-    default:
+    case 'Freelance/Startup Path':
       return 'rocket';
+    case 'Salary Negotiation & Promotion':
+      return 'trending-up';
+    default:
+      return 'briefcase';
   }
 }

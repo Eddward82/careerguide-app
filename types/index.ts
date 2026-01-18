@@ -3,7 +3,9 @@ export type CareerGoal =
   | 'Moving to Management'
   | 'Resume Refresh'
   | 'Career Pivot'
-  | 'Skill Development';
+  | 'Skill Development'
+  | 'Freelance/Startup Path'
+  | 'Salary Negotiation & Promotion';
 
 export type TransitionTimeline = '1-3m' | '3-6m' | '6-12m' | '12m+';
 

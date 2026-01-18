@@ -24,6 +24,254 @@ export interface RoadmapPhase {
 }
 
 /**
+ * Get Freelance/Startup specialized roadmap (adapts to timeline)
+ */
+function getFreelanceStartupRoadmap(timeline: TransitionTimeline): RoadmapPlan {
+  const isQuick = timeline === '1-3m' || timeline === '3-6m';
+
+  if (isQuick) {
+    // Faster launch roadmap
+    return {
+      name: 'Freelance Launch Plan',
+      totalDays: timeline === '1-3m' ? 90 : 180,
+      strategy: timeline === '1-3m' ? 'sprint' : 'balanced',
+      phases: [
+        {
+          number: 1,
+          title: 'Foundation',
+          weeks: 'Weeks 1-3',
+          description: 'Legal setup and brand foundation',
+          objectives: [
+            'Register your business entity (LLC, sole proprietorship) and get EIN',
+            'Set up business banking and accounting system (QuickBooks, Wave)',
+            'Define your service offering and ideal client profile',
+            'Create brand identity: name, logo, color palette',
+            'Set up professional email and basic website (Carrd, Webflow)',
+          ],
+          tasks: [
+            { id: 'freelance-p1-t1', text: 'Register business and obtain EIN', isCompleted: false },
+            { id: 'freelance-p1-t2', text: 'Open business bank account', isCompleted: false },
+            { id: 'freelance-p1-t3', text: 'Define 3 core service offerings', isCompleted: false },
+            { id: 'freelance-p1-t4', text: 'Create brand assets and style guide', isCompleted: false },
+            { id: 'freelance-p1-t5', text: 'Launch one-page professional website', isCompleted: false },
+          ],
+          motivationalMessage: "🚀 You're building the foundation of your empire! Every business starts with these critical first steps.",
+        },
+        {
+          number: 2,
+          title: 'Portfolio & Presence',
+          weeks: 'Weeks 4-6',
+          description: 'Build credibility and showcase work',
+          objectives: [
+            'Create 3-5 case studies from past work or pro-bono projects',
+            'Build portfolio website with client testimonials',
+            'Set up LinkedIn profile optimized for freelance services',
+            'Create service packages with clear pricing tiers',
+            'Draft contract templates and proposal frameworks',
+          ],
+          tasks: [
+            { id: 'freelance-p2-t1', text: 'Complete 3 detailed case studies', isCompleted: false },
+            { id: 'freelance-p2-t2', text: 'Launch full portfolio website', isCompleted: false },
+            { id: 'freelance-p2-t3', text: 'Create 3 service package tiers', isCompleted: false },
+            { id: 'freelance-p2-t4', text: 'Design contract and proposal templates', isCompleted: false },
+          ],
+          motivationalMessage: "💼 Your portfolio is your storefront. Make it impossible for clients to say no!",
+        },
+        {
+          number: 3,
+          title: 'Client Acquisition',
+          weeks: 'Weeks 7-12',
+          description: 'Land first paying clients',
+          objectives: [
+            'Reach out to 50+ potential clients via cold outreach',
+            'Join 5 freelance platforms (Upwork, Fiverr, Toptal)',
+            'Leverage warm network: inform 20 contacts about your services',
+            'Attend 3 virtual networking events in your niche',
+            'Create content marketing strategy (LinkedIn posts, blog)',
+            'Land first 3-5 paying clients',
+          ],
+          tasks: [
+            { id: 'freelance-p3-t1', text: 'Send 50 personalized cold outreach emails', isCompleted: false },
+            { id: 'freelance-p3-t2', text: 'Set up profiles on 5 freelance platforms', isCompleted: false },
+            { id: 'freelance-p3-t3', text: 'Announce launch to personal network', isCompleted: false },
+            { id: 'freelance-p3-t4', text: 'Publish 8 LinkedIn posts showcasing expertise', isCompleted: false },
+            { id: 'freelance-p3-t5', text: 'Secure and deliver 3 client projects', isCompleted: false },
+          ],
+          motivationalMessage: "🎯 The hustle is real, but so are the rewards! Every 'no' brings you closer to your 'yes'.",
+        },
+      ],
+    };
+  } else {
+    // Longer, sustainable startup roadmap
+    return {
+      name: 'Startup Mastery Plan',
+      totalDays: timeline === '6-12m' ? 365 : 540,
+      strategy: timeline === '6-12m' ? 'sustainable' : 'strategic',
+      phases: [
+        {
+          number: 1,
+          title: 'Foundation & Validation',
+          weeks: 'Weeks 1-8',
+          description: 'Legal setup and market validation',
+          objectives: [
+            'Register business, get EIN, set up business banking',
+            'Conduct market research: survey 50+ potential customers',
+            'Define MVP (Minimum Viable Product) features',
+            'Create business model canvas and financial projections',
+            'Build initial brand identity and landing page',
+          ],
+          tasks: [
+            { id: 'startup-p1-t1', text: 'Complete business registration and banking', isCompleted: false },
+            { id: 'startup-p1-t2', text: 'Survey 50 potential customers', isCompleted: false },
+            { id: 'startup-p1-t3', text: 'Define MVP feature list', isCompleted: false },
+            { id: 'startup-p1-t4', text: 'Create financial projections', isCompleted: false },
+          ],
+          motivationalMessage: "🌱 Every great company started with thorough research. You're building on solid ground!",
+        },
+        {
+          number: 2,
+          title: 'MVP Development',
+          weeks: 'Weeks 9-16',
+          description: 'Build and test your product',
+          objectives: [
+            'Build MVP using lean startup methodology',
+            'Recruit 10-20 beta testers from target market',
+            'Collect feedback and iterate rapidly',
+            'Set up analytics and customer feedback systems',
+            'Create pricing strategy based on value proposition',
+          ],
+          tasks: [
+            { id: 'startup-p2-t1', text: 'Launch functional MVP', isCompleted: false },
+            { id: 'startup-p2-t2', text: 'Onboard 20 beta testers', isCompleted: false },
+            { id: 'startup-p2-t3', text: 'Conduct 10 user interviews', isCompleted: false },
+            { id: 'startup-p2-t4', text: 'Iterate based on feedback', isCompleted: false },
+          ],
+          motivationalMessage: "🛠️ Your MVP is the start of something amazing. Ship it, learn, iterate!",
+        },
+        {
+          number: 3,
+          title: 'Go-to-Market',
+          weeks: 'Weeks 17-26',
+          description: 'Launch and acquire customers',
+          objectives: [
+            'Launch marketing website and social channels',
+            'Execute content marketing strategy (blog, SEO, social)',
+            'Run paid acquisition experiments (Facebook, Google Ads)',
+            'Build email list and nurture sequence',
+            'Attend industry conferences and pitch competitions',
+            'Secure first 50-100 paying customers',
+          ],
+          tasks: [
+            { id: 'startup-p3-t1', text: 'Launch marketing website', isCompleted: false },
+            { id: 'startup-p3-t2', text: 'Publish 12 SEO-optimized articles', isCompleted: false },
+            { id: 'startup-p3-t3', text: 'Run $500 ad experiment', isCompleted: false },
+            { id: 'startup-p3-t4', text: 'Acquire 50 paying customers', isCompleted: false },
+          ],
+          motivationalMessage: "📣 This is where the magic happens! Your startup is gaining traction!",
+        },
+        {
+          number: 4,
+          title: 'Product-Market Fit',
+          weeks: 'Weeks 27-40',
+          description: 'Achieve product-market fit',
+          objectives: [
+            'Measure and optimize key metrics (CAC, LTV, churn)',
+            'Build customer success and support system',
+            'Iterate product based on user data',
+            'Establish repeatable customer acquisition channels',
+            'Reach $10K+ MRR (Monthly Recurring Revenue)',
+          ],
+          tasks: [
+            { id: 'startup-p4-t1', text: 'Set up analytics dashboard', isCompleted: false },
+            { id: 'startup-p4-t2', text: 'Hire or onboard support system', isCompleted: false },
+            { id: 'startup-p4-t3', text: 'Achieve $10K MRR', isCompleted: false },
+            { id: 'startup-p4-t4', text: 'Document repeatable growth playbook', isCompleted: false },
+          ],
+          motivationalMessage: "🎊 Product-market fit achieved! You've built something people truly want!",
+        },
+      ],
+    };
+  }
+}
+
+/**
+ * Get Salary/Promotion specialized roadmap
+ */
+function getSalaryPromotionRoadmap(timeline: TransitionTimeline): RoadmapPlan {
+  const isQuick = timeline === '1-3m' || timeline === '3-6m';
+
+  return {
+    name: isQuick ? 'Promotion Sprint' : 'Executive Advancement Plan',
+    totalDays: timeline === '1-3m' ? 90 : timeline === '3-6m' ? 180 : timeline === '6-12m' ? 365 : 540,
+    strategy: timeline === '1-3m' ? 'sprint' : timeline === '3-6m' ? 'balanced' : timeline === '6-12m' ? 'sustainable' : 'strategic',
+    phases: [
+      {
+        number: 1,
+        title: 'Impact Audit',
+        weeks: 'Weeks 1-3',
+        description: 'Document and quantify your value',
+        objectives: [
+          'Create comprehensive "Wins Document" with 20+ quantified achievements',
+          'Research market compensation for your role and seniority (Glassdoor, Levels.fyi, Payscale)',
+          'Identify salary gap between current pay and market rate',
+          'Document specific business outcomes you\'ve driven (revenue, cost savings, efficiency)',
+          'Map your expanded responsibilities beyond job description',
+        ],
+        tasks: [
+          { id: 'salary-p1-t1', text: 'Document 20 quantified wins from past year', isCompleted: false },
+          { id: 'salary-p1-t2', text: 'Research market rates for your role', isCompleted: false },
+          { id: 'salary-p1-t3', text: 'Calculate your compensation gap', isCompleted: false },
+          { id: 'salary-p1-t4', text: 'Create business impact summary', isCompleted: false },
+        ],
+        motivationalMessage: "💰 Knowledge is power! Understanding your true market value is the first step to claiming it.",
+      },
+      {
+        number: 2,
+        title: 'Strategic Positioning',
+        weeks: 'Weeks 4-6',
+        description: 'Build visibility and executive presence',
+        objectives: [
+          'Schedule 1-on-1s with key decision makers (your boss, skip-level manager)',
+          'Share your career goals and aspirations explicitly',
+          'Volunteer for high-visibility projects aligned with company priorities',
+          'Build relationships with 5 internal advocates or sponsors',
+          'Document weekly impact in shared "progress tracker" (email, Slack)',
+        ],
+        tasks: [
+          { id: 'salary-p2-t1', text: 'Book 1-on-1 with manager and skip-level', isCompleted: false },
+          { id: 'salary-p2-t2', text: 'Communicate promotion/raise aspirations', isCompleted: false },
+          { id: 'salary-p2-t3', text: 'Volunteer for 2 high-impact projects', isCompleted: false },
+          { id: 'salary-p2-t4', text: 'Build relationships with 5 sponsors', isCompleted: false },
+        ],
+        motivationalMessage: "⭐ Visibility = Opportunity. Make sure the right people see your greatness!",
+      },
+      {
+        number: 3,
+        title: 'Negotiation Execution',
+        weeks: 'Weeks 7-12',
+        description: 'Execute the ask',
+        objectives: [
+          'Prepare negotiation script with specific salary/title ask',
+          'Create one-page "Promotion Case" document with metrics',
+          'Research comparable job offers as leverage (apply externally if needed)',
+          'Practice negotiation with mentor or friend (role-play)',
+          'Schedule formal review meeting with manager',
+          'Execute negotiation with confidence and backup plan',
+        ],
+        tasks: [
+          { id: 'salary-p3-t1', text: 'Draft negotiation script and case document', isCompleted: false },
+          { id: 'salary-p3-t2', text: 'Research 3 external comparable offers', isCompleted: false },
+          { id: 'salary-p3-t3', text: 'Practice negotiation 3 times', isCompleted: false },
+          { id: 'salary-p3-t4', text: 'Schedule and execute negotiation meeting', isCompleted: false },
+          { id: 'salary-p3-t5', text: 'Secure promotion or raise offer', isCompleted: false },
+        ],
+        motivationalMessage: "🎯 You've prepared, you've earned it—now claim what's yours with confidence!",
+      },
+    ],
+  };
+}
+
+/**
  * Customize roadmap objectives based on career goal
  */
 function customizeObjectivesForGoal(objectives: string[], goal: CareerGoal): string[] {
@@ -43,6 +291,16 @@ function customizeObjectivesForGoal(objectives: string[], goal: CareerGoal): str
       return obj
         .replace('portfolio or personal website', 'resume portfolio and LinkedIn showcase')
         .replace('target role', 'desired position');
+    } else if (goal === 'Freelance/Startup Path') {
+      return obj
+        .replace('transferable skills', 'entrepreneurial capabilities and service offerings')
+        .replace('portfolio or personal website', 'client-ready portfolio and service website')
+        .replace('target role', 'freelance business or startup venture');
+    } else if (goal === 'Salary Negotiation & Promotion') {
+      return obj
+        .replace('transferable skills', 'quantifiable achievements and leadership impact')
+        .replace('portfolio or personal website', 'achievement portfolio and executive presence')
+        .replace('target role', 'promoted position or market-rate compensation');
     }
     return obj;
   });
@@ -59,6 +317,15 @@ export function getRoadmapPlan(timeline: TransitionTimeline, goal?: CareerGoal):
       objectives: customizeObjectivesForGoal(phase.objectives, goal),
     }));
   };
+
+  // Special roadmaps for specific career goals
+  if (goal === 'Freelance/Startup Path') {
+    return getFreelanceStartupRoadmap(timeline);
+  }
+
+  if (goal === 'Salary Negotiation & Promotion') {
+    return getSalaryPromotionRoadmap(timeline);
+  }
 
   switch (timeline) {
     case '1-3m':
@@ -672,24 +939,31 @@ export function getRoadmapCompletionPercentage(plan: RoadmapPlan): number {
 /**
  * Get AI coaching context based on plan strategy and current phase
  */
-export function getStrategyContext(strategy: RoadmapPlan['strategy'], currentPhase?: RoadmapPhase): string {
+export function getStrategyContext(strategy: RoadmapPlan['strategy'], currentPhase?: RoadmapPhase, goal?: CareerGoal): string {
   let baseContext = '';
+
+  // Add specialized context for Freelance/Startup and Salary/Promotion paths
+  if (goal === 'Freelance/Startup Path') {
+    baseContext = 'This user is launching a freelance business or startup. Use Lean Startup methodology: focus on MVP development, customer validation, rapid iteration, and landing first paying clients. Emphasize building in public, founder networking, and practical client acquisition strategies. ';
+  } else if (goal === 'Salary Negotiation & Promotion') {
+    baseContext = 'This user is seeking a promotion or salary increase. Act as a negotiation coach: help them quantify impact, research market rates, build executive presence, and prepare for high-stakes meetings. Provide word-for-word scripts and psychological tactics. ';
+  }
 
   switch (strategy) {
     case 'sprint':
-      baseContext = 'This is a 90-day intensive sprint. Focus on immediate, high-impact actions. Suggest daily networking, rapid skill demonstrations, and aggressive timeline for applications. Emphasize quick wins and momentum.';
+      baseContext += 'This is a 90-day intensive sprint. Focus on immediate, high-impact actions. Suggest daily networking, rapid skill demonstrations, and aggressive timeline for applications. Emphasize quick wins and momentum.';
       break;
 
     case 'balanced':
-      baseContext = 'This is a 180-day balanced transition. Balance immediate actions with strategic skill building. Suggest consistent weekly progress, networking, and portfolio development. Emphasize sustainable momentum.';
+      baseContext += 'This is a 180-day balanced transition. Balance immediate actions with strategic skill building. Suggest consistent weekly progress, networking, and portfolio development. Emphasize sustainable momentum.';
       break;
 
     case 'sustainable':
-      baseContext = 'This is a 365-day mastery journey. Focus on deep skill development, certifications, and gradual brand building. Suggest long-term learning paths, community involvement, and strategic positioning. Emphasize quality over speed.';
+      baseContext += 'This is a 365-day mastery journey. Focus on deep skill development, certifications, and gradual brand building. Suggest long-term learning paths, community involvement, and strategic positioning. Emphasize quality over speed.';
       break;
 
     case 'strategic':
-      baseContext = 'This is a long-term strategic growth plan (18+ months). Focus on comprehensive skill mastery, thought leadership, and industry positioning. Suggest advanced certifications, speaking opportunities, and building influence. Emphasize strategic career architecture.';
+      baseContext += 'This is a long-term strategic growth plan (18+ months). Focus on comprehensive skill mastery, thought leadership, and industry positioning. Suggest advanced certifications, speaking opportunities, and building influence. Emphasize strategic career architecture.';
       break;
 
     default:

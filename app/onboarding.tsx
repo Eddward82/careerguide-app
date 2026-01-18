@@ -34,6 +34,8 @@ const careerGoals: CareerGoal[] = [
   'Resume Refresh',
   'Career Pivot',
   'Skill Development',
+  'Freelance/Startup Path',
+  'Salary Negotiation & Promotion',
 ];
 
 const timelines: { value: TransitionTimeline; label: string }[] = [

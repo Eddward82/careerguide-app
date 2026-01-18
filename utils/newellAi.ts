@@ -61,12 +61,34 @@ export const generateInitialPlan = async (
       ? ` (specifically focusing on: ${focusAreas.join(', ')})`
       : '');
 
+    // Add specialized context for new career paths
+    let specializedContext = '';
+    if (targetGoal === 'Freelance/Startup Path') {
+      specializedContext = `\n\n🚀 SPECIALIZED COACHING: ${name} is launching a freelance business or startup. Use "Lean Startup" methodology and focus on:
+- MVP (Minimum Viable Product) development
+- Customer validation before building
+- Rapid iteration based on feedback
+- Client acquisition strategies (cold outreach, platforms, warm network)
+- Pricing models and contract frameworks
+- Building in public and founder networking
+Make all advice ultra-practical and focused on landing the first paying customers quickly.`;
+    } else if (targetGoal === 'Salary Negotiation & Promotion') {
+      specializedContext = `\n\n💼 SPECIALIZED COACHING: ${name} wants a promotion or salary increase. Act as a "Negotiation Coach" and focus on:
+- Quantifying business impact with specific metrics (revenue, cost savings, efficiency gains)
+- Market compensation research (Glassdoor, Levels.fyi, Payscale)
+- Building internal visibility and executive presence
+- Creating a compelling "promotion case" with documented wins
+- Practicing negotiation scripts and psychological tactics
+- Timing strategies for performance reviews
+Provide word-for-word scripts and high-stakes meeting preparation tactics.`;
+    }
+
     const motivationContext = transitionDriver
       ? `\n\n💡 MOTIVATION: ${name} is driven by "${transitionDriver}". This is their "why" - make sure every piece of advice speaks to this core motivation.`
       : '';
 
     const urgencyContext = roadmapPlan
-      ? `\n\n⏱️ URGENCY: ${name} is on the "${roadmapPlan.name}" - that's ${roadmapPlan.totalDays} days. ${getStrategyContext(roadmapPlan.strategy as any)} Time is of the essence.`
+      ? `\n\n⏱️ URGENCY: ${name} is on the "${roadmapPlan.name}" - that's ${roadmapPlan.totalDays} days. ${getStrategyContext(roadmapPlan.strategy as any, undefined, targetGoal as any)} Time is of the essence.`
       : '';
 
     const phase1Context = phase1Objectives.length > 0
@@ -80,7 +102,7 @@ export const generateInitialPlan = async (
 👤 CLIENT PROFILE:
 - Current: ${currentRole} (${yearsExperience} years)
 - Target: ${visionContext}
-- Timeline: ${timeline}${motivationContext}${urgencyContext}${phase1Context}
+- Timeline: ${timeline}${motivationContext}${specializedContext}${urgencyContext}${phase1Context}
 
 🚫 CRITICAL INSTRUCTIONS - AVOID THESE TEMPLATE PHRASES:
 ❌ "Audit your skills from [Role] to [Goal]"
@@ -217,6 +239,18 @@ function getFallbackPlan(
     `Get your resume reviewed by 2-3 peers or use a free ATS scanner tool. Make revisions based on feedback, focusing on clarity and impact rather than length.`,
   ];
 
+  const freelanceStartupSteps = [
+    `Define your MVP (Minimum Viable Product): What's the simplest version of your service/product you can launch this week? Create a one-page website using Carrd or Webflow showcasing your offering.`,
+    `Reach out to 10 potential customers from your ${currentRole} network. Offer a discounted "founding client" rate in exchange for testimonials and feedback. Validate demand before building.`,
+    `Set up your business infrastructure: Register your business name, open a business bank account, and create service packages with clear pricing. Use contract templates from Bonsai or PandaDoc.`,
+  ];
+
+  const salaryPromotionSteps = [
+    `Create a "Wins Document" listing 15-20 quantified achievements from your ${experience} years as ${currentRole}. Focus on business impact: revenue generated, costs saved, efficiency improved, or problems solved.`,
+    `Research your market value using Glassdoor, Levels.fyi, and Payscale. Document the gap between your current salary and market rate. Prepare a one-page case for why you deserve the increase.`,
+    `Schedule a 1-on-1 with your manager to discuss career growth. Practice your pitch: "I'd like to discuss my career trajectory and contributions. Based on [specific wins], I believe I'm ready for [promotion/raise]. Can we explore this?"`,
+  ];
+
   // Match based on target goal
   if (targetGoal.toLowerCase().includes('tech') || targetGoal.toLowerCase().includes('software')) {
     return techTransitionSteps;
@@ -224,6 +258,10 @@ function getFallbackPlan(
     return managementTransitionSteps;
   } else if (targetGoal.toLowerCase().includes('resume') || targetGoal.toLowerCase().includes('refresh')) {
     return resumeRefreshSteps;
+  } else if (targetGoal.toLowerCase().includes('freelance') || targetGoal.toLowerCase().includes('startup')) {
+    return freelanceStartupSteps;
+  } else if (targetGoal.toLowerCase().includes('salary') || targetGoal.toLowerCase().includes('promotion') || targetGoal.toLowerCase().includes('negotiation')) {
+    return salaryPromotionSteps;
   }
 
   // Generic but still personalized fallback
@@ -259,11 +297,19 @@ export const generateCoachingAdvice = async (
       ? ` Their core motivation is: ${transitionDriver}.`
       : '';
 
+    // Add specialized coaching context
+    let coachingStyle = '';
+    if (targetGoal === 'Freelance/Startup Path') {
+      coachingStyle = `\n\n🚀 COACHING STYLE: Use "Lean Startup" methodology. Focus on rapid experimentation, MVP development, customer discovery, and founder mindset. Give tactical advice on client acquisition, pricing, and building in public.`;
+    } else if (targetGoal === 'Salary Negotiation & Promotion') {
+      coachingStyle = `\n\n💼 COACHING STYLE: Act as a "Negotiation Coach." Provide word-for-word scripts, psychological tactics for high-stakes meetings, and strategies for quantifying impact. Help them build a bulletproof case for promotion/raise.`;
+    }
+
     const prompt = `You are an elite career coach in a 1-on-1 session with ${name}.
 
 👤 CLIENT CONTEXT:
 - Current: ${currentRole} (${yearsExperience} years)
-- Target: ${targetGoal}${focusContext}${driverContext}
+- Target: ${targetGoal}${focusContext}${driverContext}${coachingStyle}
 
 💬 CHALLENGE: "${challenge}"
 

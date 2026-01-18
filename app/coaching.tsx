@@ -86,7 +86,7 @@ export default function CoachingScreen() {
           const plan = getRoadmapPlan(profile.transitionTimeline, profile.careerGoal);
           const currentDay = calculateCurrentDay(profile.planStartDate);
           currentPhase = getCurrentPhase(currentDay, plan);
-          phaseContext = getStrategyContext(plan.strategy, currentPhase);
+          phaseContext = getStrategyContext(plan.strategy, currentPhase, profile.careerGoal);
         } catch (error) {
           console.error('Error getting phase context:', error);
         }
