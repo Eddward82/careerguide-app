@@ -369,16 +369,16 @@ export default function OnboardingScreen() {
         >
         {/* Step 1: Career Goal */}
         <View style={[styles.step, { width }]}>
-          <ScrollView contentContainerStyle={styles.stepScroll}>
-            <Text style={styles.title}>What&apos;s your primary career goal?</Text>
-            <Text style={styles.subtitle}>Select one to get started</Text>
+          <ScrollView contentContainerStyle={styles.stepScrollCompact}>
+            <Text style={styles.titleCompact}>What&apos;s your primary career goal?</Text>
+            <Text style={styles.subtitleCompact}>Select one to get started</Text>
 
-            <View style={styles.optionsContainer}>
+            <View style={styles.optionsContainerCompact}>
               {careerGoals.map((goal) => (
                 <TouchableOpacity
                   key={goal}
                   style={[
-                    styles.optionCard,
+                    styles.optionCardCompact,
                     selectedGoal === goal && styles.optionCardSelected,
                   ]}
                   onPress={() => {
@@ -400,7 +400,7 @@ export default function OnboardingScreen() {
                     </View>
                     <Text
                       style={[
-                        styles.optionText,
+                        styles.optionTextCompact,
                         selectedGoal === goal && styles.optionTextSelected,
                       ]}
                     >
@@ -415,26 +415,26 @@ export default function OnboardingScreen() {
 
         {/* Step 2: Target Role/Industry (NEW - HYPER-PRECISION) */}
         <View style={[styles.step, { width }]}>
-          <ScrollView contentContainerStyle={styles.stepScroll}>
-            <Text style={styles.title}>
+          <ScrollView contentContainerStyle={styles.stepScrollCompact}>
+            <Text style={styles.titleCompact}>
               {selectedGoal === 'Switching to Tech' && "What's your target tech role?"}
               {selectedGoal === 'Moving to Management' && "Which management path interests you?"}
               {selectedGoal === 'Freelance/Startup Path' && "What's your freelance niche?"}
               {selectedGoal === 'Salary Negotiation & Promotion' && "What industry are you in?"}
               {(selectedGoal === 'Career Pivot' || selectedGoal === 'Skill Development' || selectedGoal === 'Resume Refresh') && "What's your target role or industry?"}
             </Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.subtitleCompact}>
               This helps us give you industry-specific advice
             </Text>
 
             {/* Show cards for specific career goals */}
             {getTargetRoleOptions(selectedGoal).length > 0 ? (
-              <View style={styles.optionsContainer}>
+              <View style={styles.optionsContainerCompact}>
                 {getTargetRoleOptions(selectedGoal).map((role) => (
                   <TouchableOpacity
                     key={role}
                     style={[
-                      styles.optionCard,
+                      styles.optionCardCompact,
                       targetRole === role && styles.optionCardSelected,
                     ]}
                     onPress={() => {
@@ -456,7 +456,7 @@ export default function OnboardingScreen() {
                       </View>
                       <Text
                         style={[
-                          styles.optionText,
+                          styles.optionTextCompact,
                           targetRole === role && styles.optionTextSelected,
                         ]}
                       >
@@ -499,16 +499,16 @@ export default function OnboardingScreen() {
 
         {/* Step 3: Transition Driver */}
         <View style={[styles.step, { width }]}>
-          <ScrollView contentContainerStyle={styles.stepScroll}>
-            <Text style={styles.title}>What&apos;s driving this transition?</Text>
-            <Text style={styles.subtitle}>Understanding your motivation helps us guide you better</Text>
+          <ScrollView contentContainerStyle={styles.stepScrollCompact}>
+            <Text style={styles.titleCompact}>What&apos;s driving this transition?</Text>
+            <Text style={styles.subtitleCompact}>Understanding your motivation helps us guide you better</Text>
 
-            <View style={styles.optionsContainer}>
+            <View style={styles.optionsContainerCompact}>
               {transitionDrivers.map((driver) => (
                 <TouchableOpacity
                   key={driver}
                   style={[
-                    styles.optionCard,
+                    styles.optionCardCompact,
                     selectedDriver === driver && styles.optionCardSelected,
                   ]}
                   onPress={() => {
@@ -530,7 +530,7 @@ export default function OnboardingScreen() {
                     </View>
                     <Text
                       style={[
-                        styles.optionText,
+                        styles.optionTextCompact,
                         selectedDriver === driver && styles.optionTextSelected,
                       ]}
                     >
@@ -991,8 +991,8 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 24, // Drastically reduced from 60 to bring content higher
+    paddingBottom: 8, // Reduced from 16 to compress vertical space
   },
   progressBar: {
     height: 4,
@@ -1022,6 +1022,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 120, // Increased to push content up and show buttons higher
   },
+  stepScrollCompact: {
+    // ULTRA COMPACT for steps 0-2 (Goal, Target, Motivation)
+    flexGrow: 1,
+    paddingTop: 4, // Minimal top padding
+    paddingBottom: 24, // Minimal bottom padding to ensure button visibility
+  },
   stepScrollWithButton: {
     flexGrow: 1,
     paddingBottom: 120, // Increased to push content up and show buttons higher
@@ -1040,14 +1046,33 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     flexShrink: 1,
   },
+  titleCompact: {
+    // ULTRA COMPACT for steps 0-2
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.navy,
+    marginBottom: 3, // Drastically reduced from 6
+    flexShrink: 1,
+  },
   subtitle: {
     fontSize: 14,
     color: Colors.mediumGray,
     marginBottom: 16, // Reduced from 20 to make layout more compact
     flexShrink: 1,
   },
+  subtitleCompact: {
+    // ULTRA COMPACT for steps 0-2
+    fontSize: 14,
+    color: Colors.mediumGray,
+    marginBottom: 8, // Drastically reduced from 16
+    flexShrink: 1,
+  },
   optionsContainer: {
     gap: 8, // Reduced spacing to make options more compact and buttons more accessible
+  },
+  optionsContainerCompact: {
+    // ULTRA COMPACT for steps 0-2
+    gap: 4, // Drastically reduced from 8 to compress option cards
   },
   optionCard: {
     backgroundColor: Colors.white,
@@ -1060,6 +1085,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  optionCardCompact: {
+    // ULTRA COMPACT for steps 0-2
+    backgroundColor: Colors.white,
+    borderRadius: 10, // Slightly reduced for tighter feel
+    padding: 8, // Drastically reduced from 10
+    borderWidth: 2,
+    borderColor: Colors.lightGray,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 }, // Reduced shadow
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   optionCardSelected: {
     borderColor: Colors.primary,
@@ -1094,6 +1132,15 @@ const styles = StyleSheet.create({
     color: Colors.navy,
     flex: 1,
     flexShrink: 1,
+  },
+  optionTextCompact: {
+    // ULTRA COMPACT for steps 0-2
+    fontSize: 14, // Keep readable
+    fontWeight: '500',
+    color: Colors.navy,
+    flex: 1,
+    flexShrink: 1,
+    lineHeight: 18, // Tighter line height for compactness
   },
   optionTextSelected: {
     color: Colors.primary,
@@ -1170,7 +1217,7 @@ const styles = StyleSheet.create({
   navigationContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 8, // Drastically reduced from 16 to bring buttons higher
     backgroundColor: Colors.background,
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
