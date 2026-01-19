@@ -588,7 +588,7 @@ export default function OnboardingScreen() {
                   style={styles.inlineBackButton}
                   onPress={handleBack}
                 >
-                  <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                  <Ionicons name="arrow-back" size={20} color={Colors.navy} />
                 </TouchableOpacity>
               )}
 
@@ -619,7 +619,7 @@ export default function OnboardingScreen() {
                   {name.trim().length > 0 && (
                     <Ionicons
                       name="arrow-forward"
-                      size={20}
+                      size={18}
                       color={Colors.white}
                       style={styles.buttonIcon}
                     />
@@ -688,7 +688,7 @@ export default function OnboardingScreen() {
                 style={styles.inlineBackButton}
                 onPress={handleBack}
               >
-                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                <Ionicons name="arrow-back" size={20} color={Colors.navy} />
               </TouchableOpacity>
 
               <Animated.View
@@ -717,7 +717,7 @@ export default function OnboardingScreen() {
                   {currentRole.trim().length > 0 && (
                     <Ionicons
                       name="arrow-forward"
-                      size={20}
+                      size={18}
                       color={Colors.white}
                       style={styles.buttonIcon}
                     />
@@ -793,7 +793,7 @@ export default function OnboardingScreen() {
                 style={styles.inlineBackButton}
                 onPress={handleBack}
               >
-                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                <Ionicons name="arrow-back" size={20} color={Colors.navy} />
               </TouchableOpacity>
 
               <Animated.View
@@ -812,7 +812,7 @@ export default function OnboardingScreen() {
                   </Text>
                   <Ionicons
                     name="arrow-forward"
-                    size={20}
+                    size={18}
                     color={Colors.white}
                     style={styles.buttonIcon}
                   />
@@ -851,7 +851,7 @@ export default function OnboardingScreen() {
                   ]}>
                     <Ionicons
                       name={area.icon as any}
-                      size={24}
+                      size={20}
                       color={selectedFocusAreas.includes(area.id) ? Colors.white : Colors.primary}
                     />
                   </View>
@@ -865,7 +865,7 @@ export default function OnboardingScreen() {
                   </Text>
                   {selectedFocusAreas.includes(area.id) && (
                     <View style={styles.focusAreaCheckmark}>
-                      <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                      <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -885,7 +885,7 @@ export default function OnboardingScreen() {
                 style={styles.inlineBackButton}
                 onPress={handleBack}
               >
-                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                <Ionicons name="arrow-back" size={20} color={Colors.navy} />
               </TouchableOpacity>
 
               <Animated.View
@@ -914,7 +914,7 @@ export default function OnboardingScreen() {
                   {selectedFocusAreas.length > 0 && (
                     <Ionicons
                       name="rocket"
-                      size={20}
+                      size={18}
                       color={Colors.white}
                       style={styles.buttonIcon}
                     />
@@ -931,12 +931,12 @@ export default function OnboardingScreen() {
           <View
             style={[
               styles.navigationContainer,
-              { paddingBottom: Math.max(insets.bottom, 20) + 24 },
+              { paddingBottom: Math.max(insets.bottom, 16) + 16 },
             ]}
           >
             {currentStep > 0 && (
               <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <Ionicons name="arrow-back" size={24} color={Colors.navy} />
+                <Ionicons name="arrow-back" size={20} color={Colors.navy} />
               </TouchableOpacity>
             )}
 
@@ -967,7 +967,7 @@ export default function OnboardingScreen() {
                 {canProceed() && (
                   <Ionicons
                     name="arrow-forward"
-                    size={20}
+                    size={18}
                     color={Colors.white}
                     style={styles.buttonIcon}
                   />
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingVertical: 12,
   },
   progressBar: {
     height: 4,
@@ -1015,41 +1015,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   step: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   stepScroll: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   stepScrollWithButton: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   stepScrollInline: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   stepContent: {
     flex: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.navy,
-    marginBottom: 8,
+    marginBottom: 6,
+    flexShrink: 1,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.mediumGray,
-    marginBottom: 32,
+    marginBottom: 20,
+    flexShrink: 1,
   },
   optionsContainer: {
-    gap: 12,
+    gap: 8,
   },
   optionCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 12,
     borderWidth: 2,
     borderColor: Colors.lightGray,
     shadowColor: Colors.shadow,
@@ -1067,12 +1069,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: Colors.lightGray,
-    marginRight: 16,
+    marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1080,16 +1082,17 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: Colors.primary,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: Colors.navy,
     flex: 1,
+    flexShrink: 1,
   },
   optionTextSelected: {
     color: Colors.primary,
@@ -1097,44 +1100,44 @@ const styles = StyleSheet.create({
   },
   inputCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.navy,
     marginBottom: 12,
   },
-  input: {
-    fontSize: 16,
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.navy,
-    minHeight: 40,
+    marginBottom: 8,
+  },
+  input: {
+    fontSize: 15,
+    color: Colors.navy,
+    minHeight: 36,
   },
   hint: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.mediumGray,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 12,
     fontStyle: 'italic',
   },
   selectionConfirm: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.success,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 12,
     fontWeight: '600',
   },
   sliderCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -1143,10 +1146,10 @@ const styles = StyleSheet.create({
   },
   sliderValueContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sliderValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.primary,
   },
@@ -1166,19 +1169,19 @@ const styles = StyleSheet.create({
   navigationContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 16,
     backgroundColor: Colors.background,
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
   },
   backButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -1191,8 +1194,8 @@ const styles = StyleSheet.create({
   nextButton: {
     flex: 1,
     backgroundColor: Colors.primary,
-    borderRadius: 28,
-    height: 56,
+    borderRadius: 26,
+    height: 52,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1213,14 +1216,14 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: Colors.white,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   nextButtonTextDisabled: {
     color: Colors.mediumGray,
   },
   buttonIcon: {
-    marginLeft: 8,
+    marginLeft: 6,
   },
   loadingContainer: {
     flex: 1,
@@ -1229,17 +1232,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   loadingTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.navy,
-    marginTop: 24,
+    marginTop: 20,
     marginBottom: 8,
   },
   loadingSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.mediumGray,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   welcomeContainer: {
     flex: 1,
@@ -1248,21 +1251,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   welcomeIconContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.navy,
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
   },
   welcomeSubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.navy,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 16,
+    lineHeight: 22,
+    marginBottom: 12,
   },
   welcomeHighlight: {
     fontWeight: '700',
@@ -1276,13 +1279,13 @@ const styles = StyleSheet.create({
   // Inline button styles for steps with keyboard input
   inlineButtonContainer: {
     flexDirection: 'row',
-    marginTop: 32,
-    gap: 12,
+    marginTop: 20,
+    gap: 10,
   },
   inlineBackButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1298,8 +1301,8 @@ const styles = StyleSheet.create({
   inlineNextButton: {
     flex: 1,
     backgroundColor: Colors.primary,
-    borderRadius: 28,
-    height: 56,
+    borderRadius: 26,
+    height: 52,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1332,13 +1335,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   focusAreasContainer: {
-    gap: 12,
-    marginBottom: 16,
+    gap: 8,
+    marginBottom: 12,
   },
   focusAreaCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 12,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
@@ -1354,22 +1357,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F7FF',
   },
   focusAreaIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#F0F7FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   focusAreaIconSelected: {
     backgroundColor: Colors.primary,
   },
   focusAreaText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.navy,
+    flexShrink: 1,
   },
   focusAreaTextSelected: {
     color: Colors.primary,
