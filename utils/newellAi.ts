@@ -645,9 +645,9 @@ ${name} is a ${currentRole} with ${yearsExperience} years experience working on:
       ? `\nFocus Areas: ${focusAreas.join(', ')}`
       : '';
 
-    const systemPrompt = `You are a career customization AI. Transform generic career advice into personalized action items using the user's specific details. Return ONLY valid JSON.`;
+    const fullPrompt = `You are a career customization AI. Transform generic career advice into personalized action items using the user's specific details.
 
-    const userPrompt = `${specificContext}${focusContext}
+${specificContext}${focusContext}
 
 PHASE ${phase.number}: ${phase.title}
 
@@ -665,115 +665,141 @@ INSTRUCTIONS:
 3. Keep ${phase.objectives.length} objectives and ${phase.tasks.length} tasks
 4. Be specific and actionable
 
-Return JSON (no markdown):
-{"objectives": [...], "tasks": [...]}`;
+Return ONLY valid JSON in this exact format (no markdown, no code blocks):
+{"objectives": ["...", "...", "..."], "tasks": ["...", "...", "..."]}`;
 
-    const response = await fetch(`${NEWELL_API_URL}/generate`, {
+    // Validate required configuration
+    if (!NEWELL_API_URL) {
+      console.error('[Customization] Missing NEWELL_API_URL configuration');
+      return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+    }
+    if (!PROJECT_ID) {
+      console.error('[Customization] Missing PROJECT_ID configuration');
+      return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+    }
+
+    console.log(`[Customization] Phase ${phase.number} - Sending request to ${NEWELL_API_URL}/v1/chat`);
+
+    const response = await fetch(`${NEWELL_API_URL}/v1/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Project-ID': PROJECT_ID,
       },
       body: JSON.stringify({
-        projectId: PROJECT_ID,
+        messages: [
+          {
+            role: 'user',
+            content: fullPrompt,
+          },
+        ],
         model: 'gpt-4o-mini',
-        systemPrompt,
-        userMessage: userPrompt,
         temperature: 0.7,
-        maxTokens: 2500,
+        max_tokens: 2500,
       }),
     });
 
     if (!response.ok) {
-      console.error(`[Customization] API request failed for phase ${phase.number}:`, response.status, response.statusText);
+      const errorText = await response.text().catch(() => 'Unable to read error response');
+      console.error(`[Customization] API request failed for phase ${phase.number}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        url: `${NEWELL_API_URL}/v1/chat`,
+        projectId: PROJECT_ID?.substring(0, 8) + '...',
+      });
       return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
 
-    const data: NewellAIResponse = await response.json();
-    console.log(`[Customization] Phase ${phase.number} - API Response received:`, data.success ? 'Success' : 'Failed');
+    const data = await response.json();
+    console.log(`[Customization] Phase ${phase.number} - API Response received`);
 
-    if (data.success && data.data?.message) {
-      try {
-        // Clean the response to extract JSON
-        let jsonString = data.data.message.trim();
-        console.log(`[Customization] Phase ${phase.number} - Raw AI response length:`, jsonString.length);
+    // Extract the AI message from the new /v1/chat format
+    const aiMessage = data.choices?.[0]?.message?.content || '';
 
-        // Remove markdown code blocks if present
-        jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '').replace(/```/g, '');
-
-        // Remove any leading/trailing text
-        const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          jsonString = jsonMatch[0];
-        }
-
-        console.log(`[Customization] Phase ${phase.number} - Attempting to parse JSON...`);
-        const parsed = JSON.parse(jsonString);
-
-        // Validate we got objectives and tasks arrays
-        if (!Array.isArray(parsed.objectives) || !Array.isArray(parsed.tasks)) {
-          console.error(`[Customization] Phase ${phase.number} - Invalid structure: objectives or tasks not arrays`);
-          return { objectives: phase.objectives, tasks: phase.tasks, success: false };
-        }
-
-        console.log(`[Customization] Phase ${phase.number} - Parsed successfully:`,
-          `${parsed.objectives.length} objectives, ${parsed.tasks.length} tasks`);
-
-        // RELAXED VALIDATION: Check if content is different from original (fuzzy matching)
-        const originalContent = JSON.stringify({
-          objectives: phase.objectives,
-          tasks: phase.tasks.map(t => t.text)
-        }).toLowerCase();
-        const newContent = JSON.stringify(parsed).toLowerCase();
-
-        // Calculate similarity - if > 90% same, it's probably not customized
-        const isTooSimilar = originalContent === newContent;
-
-        // Fuzzy keyword matching - check if ANY keyword appears with lenient matching
-        const hasKeywordMatch = requiredKeywords.length === 0 ||
-          requiredKeywords.some(keyword => {
-            const keywordLower = keyword.toLowerCase();
-            // Check for exact match or partial match (e.g., "web design" matches "web" or "design")
-            const keywordParts = keywordLower.split(/[\s/-]+/);
-            return keywordParts.some(part =>
-              part.length > 2 && newContent.includes(part)
-            );
-          });
-
-        // Check for meaningful differences
-        const hasCustomization = !isTooSimilar && (hasKeywordMatch || requiredKeywords.length === 0);
-
-        console.log(`[Customization] Phase ${phase.number} - Validation:`, {
-          hasKeywordMatch,
-          isTooSimilar,
-          hasCustomization,
-          requiredKeywords: requiredKeywords.slice(0, 3), // Log first 3 keywords
-        });
-
-        if (!hasCustomization && requiredKeywords.length > 0) {
-          console.warn(`[Customization] Phase ${phase.number} - Weak customization detected, accepting as best effort`);
-          // Accept it anyway as "best effort" - don't fail completely
-        }
-
-        const customizedTasks = phase.tasks.map((task, i) => ({
-          ...task,
-          text: parsed.tasks?.[i] || task.text,
-        }));
-
-        console.log(`[Customization] Phase ${phase.number} - ✅ Success`);
-        return {
-          objectives: parsed.objectives || phase.objectives,
-          tasks: customizedTasks,
-          success: true, // Always return success if we got valid JSON
-        };
-      } catch (parseError) {
-        console.error(`[Customization] Phase ${phase.number} - JSON Parse Error:`, parseError);
-        console.error(`[Customization] Phase ${phase.number} - Failed to parse response:`, data.data?.message?.substring(0, 200));
-        return { objectives: phase.objectives, tasks: phase.tasks, success: false };
-      }
+    if (!aiMessage) {
+      console.error(`[Customization] Phase ${phase.number} - No AI message in response:`, JSON.stringify(data).substring(0, 200));
+      return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
 
-    console.error(`[Customization] Phase ${phase.number} - AI response unsuccessful or empty`);
-    return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+    try {
+      // Clean the response to extract JSON
+      let jsonString = aiMessage.trim();
+      console.log(`[Customization] Phase ${phase.number} - Raw AI response length:`, jsonString.length);
+
+      // Remove markdown code blocks if present
+      jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '').replace(/```/g, '');
+
+      // Remove any leading/trailing text
+      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[0];
+      }
+
+      console.log(`[Customization] Phase ${phase.number} - Attempting to parse JSON...`);
+      const parsed = JSON.parse(jsonString);
+
+      // Validate we got objectives and tasks arrays
+      if (!Array.isArray(parsed.objectives) || !Array.isArray(parsed.tasks)) {
+        console.error(`[Customization] Phase ${phase.number} - Invalid structure: objectives or tasks not arrays`);
+        return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+      }
+
+      console.log(`[Customization] Phase ${phase.number} - Parsed successfully:`,
+        `${parsed.objectives.length} objectives, ${parsed.tasks.length} tasks`);
+
+      // RELAXED VALIDATION: Check if content is different from original (fuzzy matching)
+      const originalContent = JSON.stringify({
+        objectives: phase.objectives,
+        tasks: phase.tasks.map(t => t.text)
+      }).toLowerCase();
+      const newContent = JSON.stringify(parsed).toLowerCase();
+
+      // Calculate similarity - if > 90% same, it's probably not customized
+      const isTooSimilar = originalContent === newContent;
+
+      // Fuzzy keyword matching - check if ANY keyword appears with lenient matching
+      const hasKeywordMatch = requiredKeywords.length === 0 ||
+        requiredKeywords.some(keyword => {
+          const keywordLower = keyword.toLowerCase();
+          // Check for exact match or partial match (e.g., "web design" matches "web" or "design")
+          const keywordParts = keywordLower.split(/[\s/-]+/);
+          return keywordParts.some(part =>
+            part.length > 2 && newContent.includes(part)
+          );
+        });
+
+      // Check for meaningful differences
+      const hasCustomization = !isTooSimilar && (hasKeywordMatch || requiredKeywords.length === 0);
+
+      console.log(`[Customization] Phase ${phase.number} - Validation:`, {
+        hasKeywordMatch,
+        isTooSimilar,
+        hasCustomization,
+        requiredKeywords: requiredKeywords.slice(0, 3), // Log first 3 keywords
+      });
+
+      if (!hasCustomization && requiredKeywords.length > 0) {
+        console.warn(`[Customization] Phase ${phase.number} - Weak customization detected, accepting as best effort`);
+        // Accept it anyway as "best effort" - don't fail completely
+      }
+
+      const customizedTasks = phase.tasks.map((task, i) => ({
+        ...task,
+        text: parsed.tasks?.[i] || task.text,
+      }));
+
+      console.log(`[Customization] Phase ${phase.number} - ✅ Success`);
+      return {
+        objectives: parsed.objectives || phase.objectives,
+        tasks: customizedTasks,
+        success: true, // Always return success if we got valid JSON
+      };
+    } catch (parseError) {
+      console.error(`[Customization] Phase ${phase.number} - JSON Parse Error:`, parseError);
+      console.error(`[Customization] Phase ${phase.number} - Failed to parse AI response (first 200 chars):`, aiMessage?.substring(0, 200));
+      return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+    }
   } catch (error) {
     console.error('Error in deep roadmap customization:', error);
     return { objectives: phase.objectives, tasks: phase.tasks, success: false };

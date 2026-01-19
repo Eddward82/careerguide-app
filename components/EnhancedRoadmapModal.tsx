@@ -115,40 +115,60 @@ export default function EnhancedRoadmapModal({
 
       const profile = await getUserProfile();
 
+      // Validate profile data
+      if (!profile) {
+        console.error('[Roadmap Modal] User profile not found');
+        setIsRegenerating(false);
+        setToastType('error');
+        setToastMessage('Unable to load your profile. Please restart the app.');
+        setShowToast(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+
       // Deep customize all phases and track success
       const newCustomizedPhases = new Map<number, { objectives: string[]; tasks: { id: string; text: string; isCompleted: boolean }[] }>();
       let allSucceeded = true;
       let successCount = 0;
+      let failedPhases: number[] = [];
 
       for (const phase of roadmapPlan.phases) {
-        const customized = await deepCustomizeRoadmap(
-          {
-            name: profile.name,
-            currentRole: profile.currentRole,
-            careerGoal: profile.careerGoal,
-            yearsExperience: profile.yearsExperience,
-            focusAreas: profile.focusAreas,
-            targetRole: profile.targetRole,
-          },
-          phase,
-          customizationData
-        );
+        try {
+          const customized = await deepCustomizeRoadmap(
+            {
+              name: profile.name,
+              currentRole: profile.currentRole,
+              careerGoal: profile.careerGoal,
+              yearsExperience: profile.yearsExperience,
+              focusAreas: profile.focusAreas,
+              targetRole: profile.targetRole,
+            },
+            phase,
+            customizationData
+          );
 
-        // Only store if successfully customized
-        if (customized.success) {
-          newCustomizedPhases.set(phase.number, {
-            objectives: customized.objectives,
-            tasks: customized.tasks,
-          });
-          successCount++;
-        } else {
+          // Only store if successfully customized
+          if (customized.success) {
+            newCustomizedPhases.set(phase.number, {
+              objectives: customized.objectives,
+              tasks: customized.tasks,
+            });
+            successCount++;
+          } else {
+            allSucceeded = false;
+            failedPhases.push(phase.number);
+          }
+        } catch (phaseError) {
+          console.error(`[Roadmap Modal] Error customizing phase ${phase.number}:`, phaseError);
           allSucceeded = false;
+          failedPhases.push(phase.number);
         }
       }
 
       setIsRegenerating(false);
 
-      console.log(`[Roadmap Modal] Customization complete: ${successCount}/${roadmapPlan.phases.length} phases succeeded`);
+      console.log(`[Roadmap Modal] Customization complete: ${successCount}/${roadmapPlan.phases.length} phases succeeded`,
+        failedPhases.length > 0 ? `Failed phases: ${failedPhases.join(', ')}` : '');
 
       // Always apply whatever customization we got (best effort mode)
       if (successCount > 0) {
@@ -186,18 +206,38 @@ export default function EnhancedRoadmapModal({
         }
         setShowToast(true);
       } else {
-        // Complete failure - provide helpful message
+        // Complete failure - provide specific error message
         console.error('[Roadmap Modal] Complete customization failure - all phases failed');
+
+        // Check for common issues
+        const errorMessage = (() => {
+          // Network/connectivity issues
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            return '❌ No internet connection. Please check your network and try again.';
+          }
+          // Generic failure with helpful context
+          return `❌ Unable to personalize your plan. This could be due to:\n• Connectivity issues\n• API timeout\n• Invalid configuration\n\nPlease check your internet connection and try again in a moment.`;
+        })();
+
         setToastType('error');
-        setToastMessage('Unable to personalize. Check your connection and try again.');
+        setToastMessage(errorMessage);
         setShowToast(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } catch (error) {
       console.error('[Roadmap Modal] Error customizing roadmap:', error);
       setIsRegenerating(false);
+
+      // Provide specific error based on error type
+      let errorMessage = 'Something went wrong. Please try again.';
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = '❌ Network error. Please check your internet connection.';
+      } else if (error instanceof Error) {
+        errorMessage = `❌ Error: ${error.message}. Please try again.`;
+      }
+
       setToastType('error');
-      setToastMessage('Something went wrong. Please check your connection and try again.');
+      setToastMessage(errorMessage);
       setShowToast(true);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
