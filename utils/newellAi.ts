@@ -10,6 +10,14 @@ const PROJECT_ID =
   Constants.expoConfig?.extra?.EXPO_PUBLIC_PROJECT_ID ||
   process.env.EXPO_PUBLIC_PROJECT_ID;
 
+// Startup configuration logging
+console.log('[Newell AI] 🚀 Module initialized with configuration:', {
+  apiUrl: NEWELL_API_URL,
+  projectIdPresent: !!PROJECT_ID,
+  projectIdPreview: PROJECT_ID ? `${PROJECT_ID.substring(0, 8)}...` : 'MISSING',
+  source: Constants.expoConfig?.extra?.EXPO_PUBLIC_NEWELL_API_URL ? 'Constants' : process.env.EXPO_PUBLIC_NEWELL_API_URL ? 'process.env' : 'default',
+});
+
 interface NewellAIResponse {
   success: boolean;
   data?: {
@@ -670,15 +678,25 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks):
 
     // Validate required configuration
     if (!NEWELL_API_URL) {
-      console.error('[Customization] Missing NEWELL_API_URL configuration');
+      console.error('[Customization] ❌ CRITICAL: Missing NEWELL_API_URL configuration');
+      console.error('[Customization] Environment check:', {
+        fromConstants: Constants.expoConfig?.extra?.EXPO_PUBLIC_NEWELL_API_URL,
+        fromProcess: process.env.EXPO_PUBLIC_NEWELL_API_URL,
+      });
       return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
     if (!PROJECT_ID) {
-      console.error('[Customization] Missing PROJECT_ID configuration');
+      console.error('[Customization] ❌ CRITICAL: Missing PROJECT_ID configuration');
+      console.error('[Customization] Environment check:', {
+        fromConstants: Constants.expoConfig?.extra?.EXPO_PUBLIC_PROJECT_ID,
+        fromProcess: process.env.EXPO_PUBLIC_PROJECT_ID,
+      });
       return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
 
-    console.log(`[Customization] Phase ${phase.number} - Sending request to ${NEWELL_API_URL}/v1/chat`);
+    console.log(`[Customization] Phase ${phase.number} - 📡 Sending request to ${NEWELL_API_URL}/v1/chat`);
+    console.log(`[Customization] Phase ${phase.number} - Project ID: ${PROJECT_ID?.substring(0, 8)}...`);
+    console.log(`[Customization] Phase ${phase.number} - Prompt length: ${fullPrompt.length} chars`);
 
     const response = await fetch(`${NEWELL_API_URL}/v1/chat`, {
       method: 'POST',
@@ -700,53 +718,139 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks):
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unable to read error response');
-      console.error(`[Customization] API request failed for phase ${phase.number}:`, {
+      let errorText = 'Unable to read error response';
+      let errorDetails: any = {};
+
+      try {
+        errorText = await response.text();
+        try {
+          errorDetails = JSON.parse(errorText);
+        } catch {
+          // errorText is not JSON, keep as string
+        }
+      } catch (readError) {
+        console.error('[Customization] Failed to read error response:', readError);
+      }
+
+      console.error(`[Customization] ❌ API request failed for phase ${phase.number}:`, {
         status: response.status,
         statusText: response.statusText,
-        error: errorText,
         url: `${NEWELL_API_URL}/v1/chat`,
         projectId: PROJECT_ID?.substring(0, 8) + '...',
+        headers: {
+          'Content-Type': response.headers.get('content-type'),
+          'X-Request-ID': response.headers.get('x-request-id'),
+        },
+        errorBody: typeof errorDetails === 'object' ? errorDetails : errorText.substring(0, 300),
+      });
+
+      // Provide specific error messages based on status code
+      if (response.status === 401) {
+        console.error('[Customization] ❌ Authentication failed - check PROJECT_ID');
+      } else if (response.status === 404) {
+        console.error('[Customization] ❌ Endpoint not found - verify API URL');
+      } else if (response.status === 429) {
+        console.error('[Customization] ❌ Rate limited - too many requests');
+      } else if (response.status >= 500) {
+        console.error('[Customization] ❌ Server error - Newell API is having issues');
+      }
+
+      return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+    }
+
+    let data: any;
+    const responseText = await response.text();
+    console.log(`[Customization] Phase ${phase.number} - ✅ Response received (${responseText.length} chars)`);
+
+    try {
+      data = JSON.parse(responseText);
+    } catch (jsonError) {
+      console.error(`[Customization] Phase ${phase.number} - ❌ Failed to parse response as JSON:`, {
+        error: jsonError,
+        responsePreview: responseText.substring(0, 200),
       });
       return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
 
-    const data = await response.json();
-    console.log(`[Customization] Phase ${phase.number} - API Response received`);
-
-    // Extract the AI message from the new /v1/chat format
+    // Extract the AI message from the /v1/chat format
     const aiMessage = data.choices?.[0]?.message?.content || '';
 
     if (!aiMessage) {
-      console.error(`[Customization] Phase ${phase.number} - No AI message in response:`, JSON.stringify(data).substring(0, 200));
+      console.error(`[Customization] Phase ${phase.number} - ❌ No AI message in response`);
+      console.error(`[Customization] Phase ${phase.number} - Response structure:`, {
+        hasChoices: !!data.choices,
+        choicesLength: data.choices?.length,
+        firstChoice: data.choices?.[0] ? Object.keys(data.choices[0]) : 'N/A',
+        dataKeys: Object.keys(data),
+      });
       return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
 
+    console.log(`[Customization] Phase ${phase.number} - 📝 AI message extracted (${aiMessage.length} chars)`);
+
     try {
-      // Clean the response to extract JSON
+      // Clean the response to extract JSON - ULTRA ROBUST PARSING
       let jsonString = aiMessage.trim();
-      console.log(`[Customization] Phase ${phase.number} - Raw AI response length:`, jsonString.length);
+      console.log(`[Customization] Phase ${phase.number} - 🔍 Raw AI response preview:`, jsonString.substring(0, 150));
 
-      // Remove markdown code blocks if present
-      jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '').replace(/```/g, '');
+      // Step 1: Remove markdown code blocks (multiple formats)
+      jsonString = jsonString
+        .replace(/```json\s*/gi, '')
+        .replace(/```javascript\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .replace(/`/g, '');
 
-      // Remove any leading/trailing text
-      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+      // Step 2: Remove common conversational wrappers
+      jsonString = jsonString
+        .replace(/^Here's the.*?:/gim, '')
+        .replace(/^Here is the.*?:/gim, '')
+        .replace(/^The.*?is:/gim, '')
+        .replace(/^Response:/gim, '');
+
+      // Step 3: Extract JSON object (greedy match to get complete object)
+      let jsonMatch = jsonString.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         jsonString = jsonMatch[0];
+        console.log(`[Customization] Phase ${phase.number} - ✂️ Extracted JSON (${jsonString.length} chars)`);
+      } else {
+        console.warn(`[Customization] Phase ${phase.number} - ⚠️ No JSON object found in response, attempting to parse as-is`);
       }
 
-      console.log(`[Customization] Phase ${phase.number} - Attempting to parse JSON...`);
+      // Step 4: Clean up common formatting issues
+      jsonString = jsonString
+        .replace(/,\s*([\]}])/g, '$1') // Remove trailing commas
+        .replace(/\n/g, ' ')            // Remove newlines (preserve content)
+        .replace(/\r/g, '')             // Remove carriage returns
+        .trim();
+
+      console.log(`[Customization] Phase ${phase.number} - 🔧 Cleaned JSON preview:`, jsonString.substring(0, 100));
+      console.log(`[Customization] Phase ${phase.number} - 🎯 Attempting to parse JSON...`);
+
       const parsed = JSON.parse(jsonString);
 
       // Validate we got objectives and tasks arrays
-      if (!Array.isArray(parsed.objectives) || !Array.isArray(parsed.tasks)) {
-        console.error(`[Customization] Phase ${phase.number} - Invalid structure: objectives or tasks not arrays`);
+      if (!Array.isArray(parsed.objectives)) {
+        console.error(`[Customization] Phase ${phase.number} - ❌ Invalid structure: objectives is not an array`, {
+          type: typeof parsed.objectives,
+          value: parsed.objectives,
+        });
         return { objectives: phase.objectives, tasks: phase.tasks, success: false };
       }
 
-      console.log(`[Customization] Phase ${phase.number} - Parsed successfully:`,
+      if (!Array.isArray(parsed.tasks)) {
+        console.error(`[Customization] Phase ${phase.number} - ❌ Invalid structure: tasks is not an array`, {
+          type: typeof parsed.tasks,
+          value: parsed.tasks,
+        });
+        return { objectives: phase.objectives, tasks: phase.tasks, success: false };
+      }
+
+      console.log(`[Customization] Phase ${phase.number} - ✅ Structure validated:`,
         `${parsed.objectives.length} objectives, ${parsed.tasks.length} tasks`);
+
+      // Log sample content for debugging
+      console.log(`[Customization] Phase ${phase.number} - 📋 Sample objective:`, parsed.objectives[0]?.substring(0, 80) + '...');
+      console.log(`[Customization] Phase ${phase.number} - 📋 Sample task:`, parsed.tasks[0]?.substring(0, 80) + '...');
 
       // RELAXED VALIDATION: Check if content is different from original (fuzzy matching)
       const originalContent = JSON.stringify({
@@ -772,16 +876,20 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks):
       // Check for meaningful differences
       const hasCustomization = !isTooSimilar && (hasKeywordMatch || requiredKeywords.length === 0);
 
-      console.log(`[Customization] Phase ${phase.number} - Validation:`, {
+      console.log(`[Customization] Phase ${phase.number} - 🔍 Validation check:`, {
         hasKeywordMatch,
         isTooSimilar,
         hasCustomization,
-        requiredKeywords: requiredKeywords.slice(0, 3), // Log first 3 keywords
+        requiredKeywords: requiredKeywords.slice(0, 3),
+        totalKeywords: requiredKeywords.length,
       });
 
       if (!hasCustomization && requiredKeywords.length > 0) {
-        console.warn(`[Customization] Phase ${phase.number} - Weak customization detected, accepting as best effort`);
+        console.warn(`[Customization] Phase ${phase.number} - ⚠️ Weak customization detected, accepting as best effort`);
+        console.warn(`[Customization] Phase ${phase.number} - AI may not have incorporated all user-specific details`);
         // Accept it anyway as "best effort" - don't fail completely
+      } else {
+        console.log(`[Customization] Phase ${phase.number} - ✨ Strong customization confirmed`);
       }
 
       const customizedTasks = phase.tasks.map((task, i) => ({
@@ -789,19 +897,48 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks):
         text: parsed.tasks?.[i] || task.text,
       }));
 
-      console.log(`[Customization] Phase ${phase.number} - ✅ Success`);
+      console.log(`[Customization] Phase ${phase.number} - ✅ SUCCESS - Customization complete`);
+      console.log(`[Customization] Phase ${phase.number} - 📊 Final count: ${parsed.objectives.length} objectives, ${customizedTasks.length} tasks`);
+
       return {
         objectives: parsed.objectives || phase.objectives,
         tasks: customizedTasks,
         success: true, // Always return success if we got valid JSON
       };
     } catch (parseError) {
-      console.error(`[Customization] Phase ${phase.number} - JSON Parse Error:`, parseError);
-      console.error(`[Customization] Phase ${phase.number} - Failed to parse AI response (first 200 chars):`, aiMessage?.substring(0, 200));
+      console.error(`[Customization] Phase ${phase.number} - ❌ JSON PARSE ERROR:`, {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+        errorType: parseError instanceof Error ? parseError.name : typeof parseError,
+        aiResponseLength: aiMessage?.length,
+        aiResponsePreview: aiMessage?.substring(0, 200),
+      });
+
+      // Try to provide helpful debugging info
+      if (aiMessage) {
+        console.error(`[Customization] Phase ${phase.number} - 🔍 Debugging info:`, {
+          startsWithBrace: aiMessage.trim().startsWith('{'),
+          endsWithBrace: aiMessage.trim().endsWith('}'),
+          hasObjectivesKeyword: aiMessage.includes('objectives'),
+          hasTasksKeyword: aiMessage.includes('tasks'),
+        });
+      }
+
       return { objectives: phase.objectives, tasks: phase.tasks, success: false };
     }
   } catch (error) {
-    console.error('Error in deep roadmap customization:', error);
+    console.error(`[Customization] Phase ${phase.number} - ❌ UNEXPECTED ERROR in deepCustomizeRoadmap:`, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorType: error instanceof Error ? error.name : typeof error,
+      errorStack: error instanceof Error ? error.stack?.split('\n').slice(0, 3).join('\n') : 'N/A',
+    });
+
+    // Check for common error types and provide specific guidance
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
+      console.error('[Customization] ❌ Network error detected - check internet connection');
+    } else if (error instanceof SyntaxError) {
+      console.error('[Customization] ❌ Syntax error - possibly malformed response from API');
+    }
+
     return { objectives: phase.objectives, tasks: phase.tasks, success: false };
   }
 };

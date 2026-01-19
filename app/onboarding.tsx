@@ -1020,15 +1020,15 @@ const styles = StyleSheet.create({
   },
   stepScroll: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 120, // Increased to push content up and show buttons higher
   },
   stepScrollWithButton: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 120, // Increased to push content up and show buttons higher
   },
   stepScrollInline: {
     flexGrow: 1,
-    paddingBottom: 24,
+    paddingBottom: 140, // Increased to ensure buttons are visible above keyboard
   },
   stepContent: {
     flex: 1,
@@ -1043,16 +1043,16 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: Colors.mediumGray,
-    marginBottom: 20,
+    marginBottom: 16, // Reduced from 20 to make layout more compact
     flexShrink: 1,
   },
   optionsContainer: {
-    gap: 8,
+    gap: 8, // Reduced spacing to make options more compact and buttons more accessible
   },
   optionCard: {
     backgroundColor: Colors.white,
     borderRadius: 12,
-    padding: 12,
+    padding: 10, // Reduced from 12 for more compact layout
     borderWidth: 2,
     borderColor: Colors.lightGray,
     shadowColor: Colors.shadow,
@@ -1280,7 +1280,7 @@ const styles = StyleSheet.create({
   // Inline button styles for steps with keyboard input
   inlineButtonContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    marginTop: 12, // Reduced from 20 to bring buttons higher up on screen
     gap: 10,
   },
   inlineBackButton: {
