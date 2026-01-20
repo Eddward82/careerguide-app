@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  Animated,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -42,7 +41,6 @@ export default function HomeScreen() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentQuote, setCurrentQuote] = useState(motivationalQuotes[0]);
-  const [pulseAnim] = useState(new Animated.Value(1));
   const [communityStats, setCommunityStats] = useState(getCommunityStats());
   const [showRoadmapModal, setShowRoadmapModal] = useState(false);
   const [showMondayCheckin, setShowMondayCheckin] = useState(false);
@@ -63,26 +61,6 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Pulse animation for the Get New Coaching button
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    animation.start();
-
-    return () => animation.stop();
-  }, [pulseAnim]);
 
   const loadProfile = async () => {
     const userProfile = await getUserProfile();
@@ -394,15 +372,14 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.emptyTitle}>Start Your Journey Today</Text>
             <Text style={styles.emptySubtitle}>
-              Get personalized AI coaching tailored to your career goals. Log your first
-              win!
+              Get ready to start your structured career transition journey with a personalized roadmap.
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() => router.push('/coaching')}
+              onPress={() => setShowRoadmapModal(true)}
             >
-              <Ionicons name="add" size={24} color={Colors.white} />
-              <Text style={styles.emptyButtonText}>Get Your First Coaching</Text>
+              <Ionicons name="map" size={24} color={Colors.white} />
+              <Text style={styles.emptyButtonText}>View Your Roadmap</Text>
             </TouchableOpacity>
           </View>
         ) : showMilestoneCard && milestoneSession && profile ? (
@@ -454,23 +431,9 @@ export default function HomeScreen() {
                 onPress={() => setShowRoadmapModal(true)}
               >
                 <Text style={styles.milestoneButtonText}>View Full Roadmap</Text>
-                <Ionicons name="arrow-forward" size={18} color={Colors.primary} />
+                <Ionicons name="arrow-forward" size={20} color={Colors.white} />
               </TouchableOpacity>
             </View>
-
-            {/* Get New Coaching Button */}
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity
-                style={styles.coachingButton}
-                onPress={() => router.push('/coaching')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.coachingButtonContent}>
-                  <Ionicons name="add" size={28} color={Colors.white} />
-                  <Text style={styles.coachingButtonText}>Get New Coaching</Text>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
 
             {/* Quick Stats */}
             <View style={styles.statsContainer}>
@@ -520,20 +483,6 @@ export default function HomeScreen() {
                 )}
               </View>
             </View>
-
-            {/* Get New Coaching Button */}
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <TouchableOpacity
-                style={styles.coachingButton}
-                onPress={() => router.push('/coaching')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.coachingButtonContent}>
-                  <Ionicons name="add" size={28} color={Colors.white} />
-                  <Text style={styles.coachingButtonText}>Get New Coaching</Text>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
 
             {/* Quick Stats */}
             <View style={styles.statsContainer}>
@@ -658,16 +607,16 @@ const styles = StyleSheet.create({
   },
   roadmapCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderLeftWidth: 4,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    borderLeftWidth: 6,
     borderLeftColor: '#4A90E2', // Sky Blue
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 5,
   },
   roadmapHeader: {
     flexDirection: 'row',
@@ -687,20 +636,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   roadmapPlanName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.navy,
     marginBottom: 4,
   },
   targetRoleHighlight: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4A90E2', // Sky Blue - HYPER-PRECISION highlight
     fontWeight: '700',
     marginBottom: 4,
     letterSpacing: 0.5,
   },
   roadmapSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#4A90E2', // Sky Blue
     fontWeight: '600',
   },
@@ -950,28 +899,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.mediumGray,
   },
-  coachingButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  coachingButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coachingButtonText: {
-    color: Colors.white,
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
   statsContainer: {
     flexDirection: 'row',
     gap: 12,
@@ -1030,25 +957,25 @@ const styles = StyleSheet.create({
   },
   welcomeHeader: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 28,
+    marginBottom: 20,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 5,
   },
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.navy,
     marginBottom: 12,
   },
   welcomeSubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.navy,
-    lineHeight: 24,
+    lineHeight: 26,
   },
   welcomeHighlight: {
     fontWeight: '700',
@@ -1056,16 +983,16 @@ const styles = StyleSheet.create({
   },
   milestoneCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 20,
+    padding: 28,
     marginBottom: 24,
-    borderLeftWidth: 4,
+    borderLeftWidth: 6,
     borderLeftColor: '#50E3C2', // Mint Green accent
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 5,
   },
   milestoneHeader: {
     flexDirection: 'row',
@@ -1085,14 +1012,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   milestoneTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.navy,
     marginBottom: 4,
   },
   milestoneSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.mediumGray,
+    fontWeight: '500',
   },
   milestoneContent: {
     marginBottom: 20,
@@ -1127,15 +1055,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0F7FF',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   milestoneButtonText: {
-    color: Colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
+    color: Colors.white,
+    fontSize: 17,
+    fontWeight: '700',
     marginRight: 8,
   },
 });

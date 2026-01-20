@@ -138,16 +138,10 @@ export default function HistoryScreen() {
         {sessions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="time-outline" size={64} color={Colors.lightGray} />
-            <Text style={styles.emptyTitle}>No Coaching Sessions Yet</Text>
+            <Text style={styles.emptyTitle}>Your Journey Starts Here</Text>
             <Text style={styles.emptySubtitle}>
-              Start your journey by getting your first coaching session!
+              Your action plan sessions will appear here as you progress through your roadmap.
             </Text>
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={() => router.push('/coaching')}
-            >
-              <Text style={styles.startButtonText}>Get Started</Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.timelineContainer}>
