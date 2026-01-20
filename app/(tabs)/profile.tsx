@@ -661,7 +661,7 @@ export default function ProfileScreen() {
                 <View style={styles.usageRow}>
                   <Ionicons name="infinite" size={24} color="#4A90E2" />
                   <View style={styles.usageContent}>
-                    <Text style={styles.usageTitle}>Pro Status: Active</Text>
+                    <Text style={styles.usageTitle}>PathForward Pro: Active</Text>
                     <Text style={styles.usageSubtitle}>
                       Unlimited roadmap customizations
                     </Text>
@@ -711,7 +711,7 @@ export default function ProfileScreen() {
                   activeOpacity={0.8}
                 >
                   <Ionicons name="star" size={20} color={Colors.white} />
-                  <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                  <Text style={styles.upgradeButtonText}>Upgrade to PathForward Pro</Text>
                   <Ionicons name="arrow-forward" size={18} color={Colors.white} />
                 </TouchableOpacity>
               )}
@@ -830,7 +830,7 @@ export default function ProfileScreen() {
 
         <View style={styles.footerNote}>
           <Text style={styles.footerText}>
-            Careerguide - Your AI-powered career transition coach
+            PathForward - Your AI-powered career transition coach
           </Text>
           <Text style={styles.footerVersion}>Version 1.0.0</Text>
         </View>

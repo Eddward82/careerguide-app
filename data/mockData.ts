@@ -8,7 +8,7 @@ export const successStories: SuccessStory[] = [
     toRole: 'Product Manager',
     duration: '90 days',
     quote:
-      'Careerguide helped me identify my transferable skills and land my dream PM role at a tech startup!',
+      'PathForward helped me identify my transferable skills and land my dream PM role at a tech startup!',
     milestones: [
       'Completed Google PM certificate',
       'Built first product mockup',
@@ -59,7 +59,7 @@ export const successStories: SuccessStory[] = [
     toRole: 'Data Analyst',
     duration: '5 months',
     quote:
-      'Careerguide showed me how my analytical skills translated perfectly to data science!',
+      'PathForward showed me how my analytical skills translated perfectly to data science!',
     milestones: [
       'Learned Python & SQL',
       'Completed data bootcamp',

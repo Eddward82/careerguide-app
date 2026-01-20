@@ -13,8 +13,8 @@ import { supabase } from '@/lib/supabase';
 import { syncProfileToCloud, syncSessionToCloud } from '@/utils/supabaseSync';
 
 const STORAGE_KEYS = {
-  USER_PROFILE: '@careerguide_user_profile',
-  SESSIONS: '@careerguide_sessions',
+  USER_PROFILE: '@pathforward_user_profile',
+  SESSIONS: '@pathforward_sessions',
 };
 
 /**

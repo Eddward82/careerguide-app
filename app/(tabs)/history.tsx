@@ -62,7 +62,7 @@ export default function HistoryScreen() {
       const profile = await getUserProfile();
 
       // Create a text summary of the journey
-      let summary = `CAREERGUIDE COACHING JOURNEY\n`;
+      let summary = `PATHFORWARD COACHING JOURNEY\n`;
       summary += `Career Goal: ${profile.careerGoal}\n`;
       summary += `Current Streak: ${profile.currentStreak} days\n`;
       summary += `Total Sessions: ${sessions.length}\n\n`;
@@ -85,7 +85,7 @@ export default function HistoryScreen() {
       // Share the summary (simulates PDF export)
       await Share.share({
         message: summary,
-        title: 'My Careerguide Journey',
+        title: 'My PathForward Journey',
       });
     } catch (error) {
       console.error('Error exporting:', error);

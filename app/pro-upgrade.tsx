@@ -81,7 +81,7 @@ export default function ProUpgradeScreen() {
 
       if (result.success && result.isPro) {
         Alert.alert(
-          '🎉 Welcome to Pro!',
+          '🎉 Welcome to PathForward Pro!',
           'You now have unlimited access to all premium features.',
           [
             {
@@ -124,7 +124,7 @@ export default function ProUpgradeScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={Colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Upgrade to Pro</Text>
+        <Text style={styles.headerTitle}>Upgrade to PathForward Pro</Text>
         <View style={styles.backButton} />
       </LinearGradient>
 
@@ -291,7 +291,7 @@ export default function ProUpgradeScreen() {
               ) : (
                 <>
                   <Text style={styles.purchaseButtonText}>
-                    Upgrade to Pro
+                    Upgrade to PathForward Pro
                   </Text>
                   <Ionicons name="arrow-forward" size={20} color={Colors.white} />
                 </>

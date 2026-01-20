@@ -278,5 +278,5 @@ export const getCustomizationMessage = async (): Promise<string> => {
     return `You have ${remaining} customizations left`;
   }
 
-  return 'Upgrade to Pro for unlimited customizations';
+  return 'Upgrade to PathForward Pro for unlimited customizations';
 };

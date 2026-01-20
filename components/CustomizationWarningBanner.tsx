@@ -26,7 +26,7 @@ export default function CustomizationWarningBanner({
       <View style={styles.content}>
         <Text style={styles.title}>Only 1 Customization Left!</Text>
         <Text style={styles.subtitle}>
-          Upgrade to Pro for unlimited refinements
+          Upgrade to PathForward Pro for unlimited refinements
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#F5A623" />

@@ -51,7 +51,7 @@ export default function ShareJourneyCard({
 
       const message = `🚀 I'm ${name}, and I'm on a ${streak}-day career transition streak!
 
-I'm actively working toward ${targetGoal} with Careerguide - an AI-powered career coach that's helping me take actionable steps every day.
+I'm actively working toward ${targetGoal} with PathForward - an AI-powered career coach that's helping me take actionable steps every day.
 
 📊 Progress so far:
 • ${streak} days of consistent action
@@ -60,13 +60,13 @@ I'm actively working toward ${targetGoal} with Careerguide - an AI-powered caree
 
 Ready to level up your career too? Join me on this journey! 💪
 
-#CareerTransition #CareerGrowth #Careerguide`;
+#CareerTransition #CareerGrowth #PathForward`;
 
       const result = await Share.share(
         {
           message: message,
           ...(Platform.OS === 'ios' && {
-            url: 'https://careerguide.app', // Placeholder URL
+            url: 'https://pathforward.app', // Placeholder URL
           }),
         },
         {

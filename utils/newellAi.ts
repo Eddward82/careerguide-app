@@ -113,7 +113,7 @@ Provide word-for-word scripts and high-stakes meeting preparation tactics.`;
       ? `\n\n🎯 TRANSITION PATHWAY: ${name} is transitioning FROM ${currentRole} TO ${targetRole}. Every action step MUST reference BOTH roles to show the bridge between where they are and where they're going.`
       : '';
 
-    const prompt = `You are an elite career transition coach working 1-on-1 with ${identityContext}.
+    const prompt = `You are the PathForward AI Coach - an elite career transition coach working 1-on-1 with ${identityContext}.
 
 🎯 MISSION: Create a personalized "First Milestone" - 3 immediate, high-impact action steps for ${name}'s transition from ${currentRole} to ${visionContext}.${transitionContext}
 
@@ -335,7 +335,7 @@ export const generateCoachingAdvice = async (
       ? `\n\n🎯 TRANSITION CONTEXT: ${name} is moving FROM ${currentRole} TO ${targetRole}. All advice must acknowledge both their current expertise and target destination.`
       : '';
 
-    const prompt = `You are an elite career coach in a 1-on-1 session with ${name}.
+    const prompt = `You are the PathForward AI Coach in a 1-on-1 session with ${name}.
 
 👤 CLIENT CONTEXT:
 - Current: ${currentRole} (${yearsExperience} years)
@@ -451,7 +451,7 @@ export const refineRoadmapWithAI = async (
       targetContext = ` with focus on: ${focusAreas.join(', ')}`;
     }
 
-    const prompt = `You are a professional career coach. Personalize these career roadmap objectives for ${name}.
+    const prompt = `You are the PathForward AI Coach. Personalize these career roadmap objectives for ${name}.
 
 USER PROFILE:
 - Current Role: ${currentRole}
@@ -653,7 +653,7 @@ ${name} is a ${currentRole} with ${yearsExperience} years experience working on:
       ? `\nFocus Areas: ${focusAreas.join(', ')}`
       : '';
 
-    const fullPrompt = `You are a career customization AI. Transform generic career advice into personalized action items using the user's specific details.
+    const fullPrompt = `You are the PathForward AI Coach. Transform generic career advice into personalized action items using the user's specific details.
 
 ${specificContext}${focusContext}
 

@@ -84,7 +84,7 @@ export default function StoriesScreen() {
           </Text>
           <TouchableOpacity
             style={styles.ctaButton}
-            onPress={() => Linking.openURL('https://careerguide.com/join')}
+            onPress={() => Linking.openURL('https://pathforward.app/join')}
           >
             <Text style={styles.ctaButtonText}>Start Your Journey</Text>
             <Ionicons name="arrow-forward" size={20} color={Colors.white} />

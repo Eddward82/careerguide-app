@@ -243,7 +243,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.logo}>Careerguide</Text>
+            <Text style={styles.logo}>PathForward</Text>
             {profile?.name && (
               <Text style={styles.greeting}>Hi, {profile.name}! 👋</Text>
             )}

@@ -148,7 +148,7 @@ export default function SignupScreen() {
           </LinearGradient>
           <Text style={styles.successTitle}>Account Created!</Text>
           <Text style={styles.successMessage}>
-            Welcome to Careerguide. Let&apos;s set up your profile...
+            Welcome to PathForward. Let&apos;s set up your profile...
           </Text>
         </View>
       </SafeAreaView>
