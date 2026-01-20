@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { migrateLocalDataToCloud, fetchCloudData } from '@/utils/supabaseSync';
 import { saveUserProfile, getUserProfile } from '@/utils/storage';
+import { initializeRevenueCat, loginRevenueCatUser, logoutRevenueCatUser } from '@/utils/revenueCat';
 import { UserProfile } from '@/types';
 
 interface AuthContextType {
@@ -23,11 +24,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize RevenueCat
+    initializeRevenueCat().then((success) => {
+      if (success) {
+        console.log('✅ RevenueCat initialized');
+      }
+    });
+
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // If there's an existing session, log in to RevenueCat
+      if (session?.user) {
+        loginRevenueCatUser(session.user.id);
+      }
     });
 
     // Listen for auth changes
@@ -37,9 +50,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
 
-      // If user just signed in, migrate local data to cloud
+      // If user just signed in, migrate local data to cloud and log in to RevenueCat
       if (session?.user && _event === 'SIGNED_IN') {
         await handleUserSignIn(session.user.id);
+        await loginRevenueCatUser(session.user.id);
+      }
+
+      // If user signed out, log out from RevenueCat
+      if (_event === 'SIGNED_OUT') {
+        await logoutRevenueCatUser();
       }
     });
 
@@ -86,6 +105,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             weeklyChallengeBonusStreak: 0,
             referralCode: '',
             darkMode: false,
+            // Subscription fields
+            subscriptionStatus: cloudData.profile.subscription_status || 'free',
+            customizationsUsedTotal: cloudData.profile.customizations_used_total || 0,
+            customizationLimit: cloudData.profile.customization_limit || 5,
+            customizationLogs: [],
+            revenueCatUserId: cloudData.profile.revenuecat_user_id,
           };
 
           await saveUserProfile(localProfile);

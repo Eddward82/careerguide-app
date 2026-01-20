@@ -117,6 +117,11 @@ const defaultProfile: UserProfile = {
   weeklyChallengeBonusStreak: 0,
   referralCode: generateReferralCode(),
   darkMode: false,
+  // Subscription & Premium Features
+  subscriptionStatus: 'free',
+  customizationsUsedTotal: 0,
+  customizationLimit: 5,
+  customizationLogs: [],
 };
 
 // Get user profile
@@ -134,6 +139,11 @@ export const getUserProfile = async (): Promise<UserProfile> => {
       if (!profile.yearsExperience) profile.yearsExperience = 0;
       if (!profile.transitionTimeline) profile.transitionTimeline = '3-6m';
       if (!profile.weeklyChallengeBonusStreak) profile.weeklyChallengeBonusStreak = 0;
+      // Subscription fields (for existing users upgrading)
+      if (!profile.subscriptionStatus) profile.subscriptionStatus = 'free';
+      if (profile.customizationsUsedTotal === undefined) profile.customizationsUsedTotal = 0;
+      if (!profile.customizationLimit) profile.customizationLimit = 5;
+      if (!profile.customizationLogs) profile.customizationLogs = [];
 
       // Check if weekly challenge needs refresh
       if (profile.weeklyChallenge) {

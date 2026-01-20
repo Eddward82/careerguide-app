@@ -51,6 +51,16 @@ export interface CoachingSession {
 
 export type FocusArea = string;
 
+export type SubscriptionStatus = 'free' | 'pro';
+
+export interface CustomizationLog {
+  id: string;
+  timestamp: string;
+  fromTimeline: TransitionTimeline;
+  toTimeline: TransitionTimeline;
+  userId: string;
+}
+
 export interface UserProfile {
   // Onboarding info
   name: string;
@@ -84,6 +94,13 @@ export interface UserProfile {
   lastActivityDate: string;
   hasCompletedOnboarding: boolean;
   sessions: CoachingSession[];
+
+  // Subscription & Premium Features
+  subscriptionStatus: SubscriptionStatus;
+  customizationsUsedTotal: number; // Lifetime count of AI refinements
+  customizationLimit: number; // Default 5 for free users
+  customizationLogs: CustomizationLog[]; // History of all customizations
+  revenueCatUserId?: string; // RevenueCat user ID for syncing
 
   // Engagement features
   badges: Badge[];

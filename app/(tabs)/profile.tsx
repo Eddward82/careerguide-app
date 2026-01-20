@@ -21,6 +21,7 @@ import { UserProfile } from '@/types';
 import ShareJourneyCard from '@/components/ShareJourneyCard';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@/contexts/AuthContext';
+import { restorePurchases, canCustomize } from '@/utils/revenueCat';
 import {
   getWeeklyReminderEnabled,
   setWeeklyReminderEnabled,
@@ -46,12 +47,16 @@ export default function ProfileScreen() {
   const [selectedDay, setSelectedDay] = useState(2); // Monday
   const [selectedHour, setSelectedHour] = useState(18); // 6 PM
   const [accountabilityTime, setAccountabilityTimeState] = useState<AccountabilityTime | null>(null);
+  const [customizationsRemaining, setCustomizationsRemaining] = useState(5);
+  const [isPro, setIsPro] = useState(false);
+  const [isRestoringPurchases, setIsRestoringPurchases] = useState(false);
 
   useEffect(() => {
     loadProfile();
     loadNotificationSettings();
     loadDemoMode();
     loadAccountabilityTime();
+    loadSubscriptionStatus();
   }, []);
 
   const loadProfile = async () => {
@@ -77,6 +82,58 @@ export default function ProfileScreen() {
     if (time) {
       setSelectedDay(time.day);
       setSelectedHour(time.hour);
+    }
+  };
+
+  const loadSubscriptionStatus = async () => {
+    try {
+      const { allowed, remaining, isPro: isProUser } = await canCustomize();
+      setCustomizationsRemaining(remaining);
+      setIsPro(isProUser);
+    } catch (error) {
+      console.error('Failed to load subscription status:', error);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      setIsRestoringPurchases(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      const result = await restorePurchases();
+
+      if (result.success) {
+        if (result.isPro) {
+          Alert.alert(
+            '✅ Purchases Restored',
+            'Your Pro subscription has been restored successfully!',
+            [{ text: 'OK' }]
+          );
+          await loadSubscriptionStatus();
+          await loadProfile();
+        } else {
+          Alert.alert(
+            'No Purchases Found',
+            'We couldn\'t find any previous purchases to restore.',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        Alert.alert(
+          'Restore Failed',
+          'Unable to restore purchases. Please try again later.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Restore purchases failed:', error);
+      Alert.alert(
+        'Error',
+        'An error occurred while restoring purchases.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsRestoringPurchases(false);
     }
   };
 
@@ -577,6 +634,106 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Subscription & Usage */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Subscription & Usage</Text>
+          <View style={styles.subscriptionCard}>
+            {/* Subscription Status */}
+            <View style={styles.subscriptionHeader}>
+              <View style={styles.subscriptionBadge}>
+                {isPro ? (
+                  <>
+                    <Ionicons name="star" size={20} color="#FFD700" />
+                    <Text style={styles.subscriptionBadgeTextPro}>Pro</Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="person" size={20} color={Colors.mediumGray} />
+                    <Text style={styles.subscriptionBadgeTextFree}>Free</Text>
+                  </>
+                )}
+              </View>
+            </View>
+
+            {/* Usage Stats */}
+            <View style={styles.usageContainer}>
+              {isPro ? (
+                <View style={styles.usageRow}>
+                  <Ionicons name="infinite" size={24} color="#4A90E2" />
+                  <View style={styles.usageContent}>
+                    <Text style={styles.usageTitle}>Pro Status: Active</Text>
+                    <Text style={styles.usageSubtitle}>
+                      Unlimited roadmap customizations
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.usageRow}>
+                    <Ionicons name="flash" size={24} color={Colors.primary} />
+                    <View style={styles.usageContent}>
+                      <Text style={styles.usageTitle}>Customizations Available</Text>
+                      <Text style={styles.usageSubtitle}>
+                        {customizationsRemaining} of 5 lifetime customizations remaining
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.progressBarContainer}>
+                    <View style={styles.progressBarBackground}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            width: `${((5 - customizationsRemaining) / 5) * 100}%`,
+                            backgroundColor:
+                              customizationsRemaining <= 1 ? '#FF6B6B' : '#4A90E2',
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.progressText}>
+                      {5 - customizationsRemaining}/5 used
+                    </Text>
+                  </View>
+                </>
+              )}
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.subscriptionActions}>
+              {!isPro && (
+                <TouchableOpacity
+                  style={styles.upgradeButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push('/pro-upgrade');
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="star" size={20} color={Colors.white} />
+                  <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                  <Ionicons name="arrow-forward" size={18} color={Colors.white} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.restoreButton}
+                onPress={handleRestorePurchases}
+                disabled={isRestoringPurchases}
+                activeOpacity={0.7}
+              >
+                {isRestoringPurchases ? (
+                  <Text style={styles.restoreButtonText}>Restoring...</Text>
+                ) : (
+                  <>
+                    <Ionicons name="refresh" size={18} color="#4A90E2" />
+                    <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         {/* Account Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -890,6 +1047,119 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.navy,
     marginLeft: 12,
+  },
+  subscriptionCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  subscriptionHeader: {
+    marginBottom: 16,
+  },
+  subscriptionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F7FF',
+    gap: 8,
+  },
+  subscriptionBadgeTextPro: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFD700',
+  },
+  subscriptionBadgeTextFree: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.mediumGray,
+  },
+  usageContainer: {
+    marginBottom: 20,
+  },
+  usageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  usageContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  usageTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.navy,
+    marginBottom: 4,
+  },
+  usageSubtitle: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    lineHeight: 20,
+  },
+  progressBarContainer: {
+    marginTop: 8,
+  },
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: Colors.lightGray,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    color: Colors.mediumGray,
+    textAlign: 'right',
+  },
+  subscriptionActions: {
+    gap: 10,
+  },
+  upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4A90E2',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  upgradeButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  restoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F7FF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  restoreButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A90E2',
   },
   infoCard: {
     backgroundColor: Colors.white,

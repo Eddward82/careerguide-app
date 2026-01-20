@@ -9,16 +9,20 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { RoadmapPlan, getCurrentWeekInPhase, getPhaseCompletionPercentage, isPhaseCompleted } from '@/utils/roadmap';
 import { deepCustomizeRoadmap } from '@/utils/newellAi';
 import { getUserProfile } from '@/utils/storage';
+import { canCustomize, recordCustomization, getCustomizationMessage } from '@/utils/revenueCat';
 import * as Haptics from 'expo-haptics';
 import { getFocusAreasForGoal, getIconForGoal } from '@/utils/focusAreas';
 import { UserProfile } from '@/types';
 import CustomizePlanModal from './CustomizePlanModal';
 import RegeneratingPlanAnimation from './RegeneratingPlanAnimation';
 import Toast from './Toast';
+import PaywallModal from './PaywallModal';
+import CustomizationWarningBanner from './CustomizationWarningBanner';
 
 interface EnhancedRoadmapModalProps {
   visible: boolean;
@@ -39,6 +43,7 @@ export default function EnhancedRoadmapModal({
   onAdjustTimeline,
   onRoadmapRefined,
 }: EnhancedRoadmapModalProps) {
+  const router = useRouter();
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set([1]));
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isCustomized, setIsCustomized] = useState(false);
@@ -49,15 +54,24 @@ export default function EnhancedRoadmapModal({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  // Subscription & Paywall State
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [customizationsRemaining, setCustomizationsRemaining] = useState(5);
+  const [isPro, setIsPro] = useState(false);
 
-  // Load user profile on mount
+  // Load user profile and subscription status on mount
   React.useEffect(() => {
     const loadProfile = async () => {
       const profile = await getUserProfile();
       setUserProfile(profile);
+
+      // Load subscription status
+      const { allowed, remaining, isPro: isProUser } = await canCustomize();
+      setCustomizationsRemaining(remaining);
+      setIsPro(isProUser);
     };
     loadProfile();
-  }, []);
+  }, [visible]);
 
   const getPhaseStatus = (phaseIndex: number): 'completed' | 'current' | 'upcoming' => {
     const phase = roadmapPlan.phases[phaseIndex];
@@ -110,6 +124,17 @@ export default function EnhancedRoadmapModal({
   const handleCustomizePlan = async (customizationData: Record<string, string>) => {
     try {
       setShowCustomizeModal(false);
+
+      // Check subscription eligibility FIRST
+      const { allowed, remaining, isPro: isProUser } = await canCustomize();
+
+      if (!allowed && !isProUser) {
+        // User has hit their limit - show paywall
+        setShowPaywall(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        return;
+      }
+
       setIsRegenerating(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -172,6 +197,19 @@ export default function EnhancedRoadmapModal({
 
       // Always apply whatever customization we got (best effort mode)
       if (successCount > 0) {
+        // Record the customization for subscription tracking
+        const recorded = await recordCustomization(
+          profile.transitionTimeline,
+          (customizationData.timeline as any) || profile.transitionTimeline
+        );
+
+        if (recorded) {
+          // Reload subscription status
+          const { allowed, remaining, isPro: isProUser } = await canCustomize();
+          setCustomizationsRemaining(remaining);
+          setIsPro(isProUser);
+        }
+
         setCustomizedPhases(newCustomizedPhases);
         setIsCustomized(true);
 
@@ -194,14 +232,15 @@ export default function EnhancedRoadmapModal({
           onRoadmapRefined(customizedPlan);
         }
 
-        // Show appropriate success message
+        // Show appropriate success message with remaining customizations
+        const customizationMsg = await getCustomizationMessage();
         if (allSucceeded) {
           setToastType('success');
-          setToastMessage('🎉 Your roadmap is now personalized!');
+          setToastMessage(`🎉 Your roadmap is personalized! ${!isPro ? customizationMsg : ''}`);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else {
           setToastType('success');
-          setToastMessage(`✨ Personalized ${successCount} of ${roadmapPlan.phases.length} phases`);
+          setToastMessage(`✨ Personalized ${successCount} of ${roadmapPlan.phases.length} phases. ${!isPro ? customizationMsg : ''}`);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
         setShowToast(true);
@@ -350,22 +389,50 @@ export default function EnhancedRoadmapModal({
           </View>
         )}
 
-        {/* Customize Your Plan Button */}
-        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+        {/* Warning Banner for 1 Customization Remaining */}
+        {!isPro && customizationsRemaining === 1 && (
+          <CustomizationWarningBanner
+            remaining={customizationsRemaining}
+            onUpgrade={() => {
+              onClose();
+              router.push('/pro-upgrade');
+            }}
+          />
+        )}
+
+        {/* Customize Your Plan Button - Different states based on subscription */}
+        {customizationsRemaining > 0 || isPro ? (
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity
+              style={styles.customizeButton}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowCustomizeModal(true);
+              }}
+              disabled={isRegenerating}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="settings-sharp" size={20} color={Colors.white} />
+              <Text style={styles.customizeButtonText}>
+                {isPro ? 'Customize Your Plan (Unlimited)' : 'Customize Your Plan'}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+            </TouchableOpacity>
+          </Animated.View>
+        ) : (
           <TouchableOpacity
-            style={styles.customizeButton}
+            style={[styles.customizeButton, styles.customizeButtonDisabled]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowCustomizeModal(true);
+              setShowPaywall(true);
             }}
-            disabled={isRegenerating}
             activeOpacity={0.8}
           >
-            <Ionicons name="settings-sharp" size={20} color={Colors.white} />
-            <Text style={styles.customizeButtonText}>Customize Your Plan</Text>
-            <Ionicons name="arrow-forward" size={20} color={Colors.white} />
+            <Ionicons name="lock-closed" size={20} color="#A0A0A0" />
+            <Text style={styles.customizeButtonTextDisabled}>Upgrade to Customize</Text>
+            <Ionicons name="arrow-forward" size={20} color="#A0A0A0" />
           </TouchableOpacity>
-        </Animated.View>
+        )}
 
         {/* Phases List - Vertical Timeline */}
         <ScrollView
@@ -571,6 +638,20 @@ export default function EnhancedRoadmapModal({
         type={toastType}
         onHide={() => setShowToast(false)}
       />
+
+      {/* Paywall Modal */}
+      {userProfile && (
+        <PaywallModal
+          visible={showPaywall}
+          customizationsUsed={userProfile.customizationsUsedTotal}
+          customizationLimit={userProfile.customizationLimit}
+          onUpgrade={() => {
+            setShowPaywall(false);
+            onClose();
+            router.push('/pro-upgrade');
+          }}
+        />
+      )}
     </Modal>
   );
 }
@@ -883,6 +964,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.white,
+    letterSpacing: 0.5,
+  },
+  customizeButtonDisabled: {
+    backgroundColor: '#E8E8E8',
+    shadowOpacity: 0.1,
+  },
+  customizeButtonTextDisabled: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#A0A0A0',
     letterSpacing: 0.5,
   },
   customizedBanner: {

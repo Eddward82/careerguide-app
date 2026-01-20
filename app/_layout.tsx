@@ -34,6 +34,13 @@ export default function RootLayout() {
             animation: 'slide_from_right'
           }}
         />
+        <Stack.Screen
+          name="pro-upgrade"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom'
+          }}
+        />
       </Stack>
     </AuthProvider>
   );
