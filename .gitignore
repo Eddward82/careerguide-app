@@ -46,3 +46,7 @@ app-example
 .fastshot-logs/
 examples/
 CLAUDE.md
+# .gitignore
+.env
+.env.local
+.env.*.local
