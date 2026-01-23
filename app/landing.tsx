@@ -89,7 +89,7 @@ const FeatureCard = ({
           style={[styles.featureCardContent, isHovered && styles.featureCardHovered]}
         >
           <View style={styles.iconContainer}>
-            <Ionicons name={icon as any} size={32} color={Colors.primary} />
+            <Ionicons name={icon as any} size={28} color={Colors.primary} />
           </View>
           <Text style={styles.featureTitle}>{title}</Text>
           <Text style={styles.featureDescription}>{description}</Text>
@@ -164,11 +164,11 @@ export default function LandingPage() {
               {/* CTA Buttons */}
               <View style={styles.ctaContainer}>
                 <Pressable style={styles.ctaButtonPrimary}>
-                  <Ionicons name="logo-apple" size={20} color={Colors.white} />
+                  <Ionicons name="logo-apple" size={18} color={Colors.white} />
                   <Text style={styles.ctaButtonText}>App Store</Text>
                 </Pressable>
                 <Pressable style={styles.ctaButtonSecondary}>
-                  <Ionicons name="logo-google-playstore" size={20} color={Colors.primary} />
+                  <Ionicons name="logo-google-playstore" size={18} color={Colors.primary} />
                   <Text style={styles.ctaButtonTextSecondary}>Google Play</Text>
                 </Pressable>
               </View>
@@ -183,7 +183,7 @@ export default function LandingPage() {
                     </View>
                     <View style={styles.mockupContent}>
                       <View style={styles.mockupCard}>
-                        <Ionicons name="flag" size={24} color={Colors.success} />
+                        <Ionicons name="flag" size={20} color={Colors.success} />
                         <Text style={styles.mockupCardTitle}>Your First Milestone</Text>
                         <Text style={styles.mockupCardText}>AI-curated action plan for you</Text>
                       </View>
@@ -274,7 +274,7 @@ export default function LandingPage() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Ionicons name="star" size={48} color={Colors.white} />
+                <Ionicons name="star" size={40} color={Colors.white} />
                 <Text style={styles.proCardTitle}>Upgrade to Pro</Text>
                 <Text style={styles.proCardDescription}>
                   Get unlimited AI customizations, priority access, and advanced resources
@@ -282,26 +282,26 @@ export default function LandingPage() {
 
                 <View style={styles.proFeatures}>
                   <View style={styles.proFeature}>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
                     <Text style={styles.proFeatureText}>Unlimited Customizations</Text>
                   </View>
                   <View style={styles.proFeature}>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
                     <Text style={styles.proFeatureText}>Priority AI Access</Text>
                   </View>
                   <View style={styles.proFeature}>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
                     <Text style={styles.proFeatureText}>Advanced Resource Library</Text>
                   </View>
                   <View style={styles.proFeature}>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
                     <Text style={styles.proFeatureText}>24/7 AI Coaching</Text>
                   </View>
                 </View>
 
                 <Pressable style={styles.proButton}>
                   <Text style={styles.proButtonText}>Upgrade Now</Text>
-                  <Ionicons name="arrow-forward" size={20} color={Colors.primary} />
+                  <Ionicons name="arrow-forward" size={18} color={Colors.primary} />
                 </Pressable>
               </LinearGradient>
             </View>
@@ -405,26 +405,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingVertical: 14,
     maxWidth: 1200,
     marginHorizontal: 'auto',
     width: '100%',
   },
   logo: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.navy,
   },
   loginButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
     backgroundColor: Colors.primary,
     borderRadius: 8,
   },
   loginButtonText: {
     color: Colors.white,
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
   },
   scrollView: {
     flex: 1,
@@ -433,85 +433,86 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   heroSection: {
-    paddingVertical: 80,
+    paddingVertical: isWeb ? 60 : 48,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
   heroContent: {
-    maxWidth: 1200,
+    maxWidth: 1000,
     width: '100%',
     alignItems: 'center',
   },
   heroHeadline: {
-    fontSize: isWeb ? 56 : 40,
+    fontSize: isWeb ? 38 : 30,
     fontWeight: '700',
     color: Colors.navy,
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: isWeb ? 64 : 48,
+    marginBottom: 12,
+    lineHeight: isWeb ? 46 : 38,
+    maxWidth: 800,
   },
   heroSubheadline: {
-    fontSize: isWeb ? 20 : 18,
+    fontSize: isWeb ? 16 : 15,
     color: Colors.mediumGray,
     textAlign: 'center',
-    marginBottom: 32,
-    maxWidth: 700,
-    lineHeight: 28,
+    marginBottom: 28,
+    maxWidth: 600,
+    lineHeight: 24,
   },
   ctaContainer: {
     flexDirection: isWeb ? 'row' : 'column',
-    gap: 16,
-    marginBottom: 60,
+    gap: 12,
+    marginBottom: 40,
   },
   ctaButtonPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.navy,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 10,
     gap: 8,
-    minWidth: 200,
+    minWidth: 180,
     justifyContent: 'center',
   },
   ctaButtonSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 10,
     gap: 8,
-    minWidth: 200,
+    minWidth: 180,
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: Colors.primary,
   },
   ctaButtonText: {
     color: Colors.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   ctaButtonTextSecondary: {
     color: Colors.primary,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   mockupContainer: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 32,
   },
   phoneMockup: {
-    width: isWeb ? 320 : 280,
-    height: isWeb ? 650 : 570,
+    width: isWeb ? 280 : 260,
+    height: isWeb ? 560 : 520,
     backgroundColor: Colors.navy,
-    borderRadius: 40,
-    padding: 12,
+    borderRadius: 36,
+    padding: 10,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.3,
-    shadowRadius: 40,
-    elevation: 20,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 32,
+    elevation: 16,
   },
   phoneNotch: {
     width: 120,
@@ -533,79 +534,83 @@ const styles = StyleSheet.create({
   },
   mockupHeader: {
     backgroundColor: Colors.white,
-    padding: 20,
-    paddingTop: 40,
+    padding: 16,
+    paddingTop: 36,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
   },
   mockupHeaderText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '600',
     color: Colors.navy,
   },
   mockupContent: {
-    padding: 20,
+    padding: 16,
   },
   mockupCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   mockupCardTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.navy,
-    marginTop: 12,
+    marginTop: 10,
   },
   mockupCardText: {
-    fontSize: 14,
+    fontSize: 12,
     color: Colors.mediumGray,
-    marginTop: 4,
+    marginTop: 3,
   },
   section: {
-    paddingVertical: 80,
+    paddingVertical: isWeb ? 60 : 48,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: isWeb ? 42 : 32,
+    fontSize: isWeb ? 32 : 26,
     fontWeight: '700',
     color: Colors.navy,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+    lineHeight: isWeb ? 40 : 34,
+    maxWidth: 800,
   },
   sectionSubtitle: {
-    fontSize: 18,
+    fontSize: 15,
     color: Colors.mediumGray,
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 40,
     maxWidth: 600,
+    lineHeight: 22,
   },
   stepsContainer: {
-    maxWidth: 800,
+    maxWidth: 720,
     width: '100%',
-    gap: 32,
+    gap: 28,
   },
   stepCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 20,
+    gap: 16,
   },
   stepNumber: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   stepNumberText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.white,
   },
@@ -613,106 +618,111 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepTitle: {
-    fontSize: 24,
+    fontSize: 19,
     fontWeight: '600',
     color: Colors.navy,
-    marginBottom: 8,
+    marginBottom: 6,
+    lineHeight: 26,
   },
   stepDescription: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.mediumGray,
-    lineHeight: 24,
+    lineHeight: 21,
   },
   featuresGrid: {
     flexDirection: isWeb ? 'row' : 'column',
     flexWrap: 'wrap',
-    gap: 24,
-    maxWidth: 1200,
+    gap: 20,
+    maxWidth: 1000,
     width: '100%',
     justifyContent: 'center',
   },
   featureCard: {
-    width: isWeb ? 360 : '100%',
+    width: isWeb ? 310 : '100%',
   },
   featureCardContent: {
     backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 32,
+    borderRadius: 16,
+    padding: 24,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
     borderWidth: 1,
     borderColor: Colors.lightGray,
   },
   featureCardHovered: {
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 6,
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: `${Colors.primary}15`,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   featureTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.navy,
-    marginBottom: 12,
-  },
-  featureDescription: {
-    fontSize: 16,
-    color: Colors.mediumGray,
+    marginBottom: 10,
     lineHeight: 24,
   },
+  featureDescription: {
+    fontSize: 14,
+    color: Colors.mediumGray,
+    lineHeight: 21,
+  },
   proCard: {
-    maxWidth: 800,
+    maxWidth: 680,
     width: '100%',
-    borderRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 10,
   },
   proCardGradient: {
-    padding: 48,
+    padding: isWeb ? 40 : 32,
     alignItems: 'center',
   },
   proCardTitle: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.white,
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 12,
+    marginBottom: 6,
+    lineHeight: 34,
   },
   proCardDescription: {
-    fontSize: 18,
+    fontSize: 15,
     color: Colors.white,
     textAlign: 'center',
-    marginBottom: 32,
-    opacity: 0.9,
+    marginBottom: 28,
+    opacity: 0.92,
+    lineHeight: 22,
+    maxWidth: 500,
   },
   proFeatures: {
     width: '100%',
-    gap: 16,
-    marginBottom: 32,
+    gap: 14,
+    marginBottom: 28,
   },
   proFeature: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   proFeatureText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.white,
     fontWeight: '500',
   },
@@ -720,117 +730,119 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 10,
     gap: 8,
   },
   proButtonText: {
     color: Colors.primary,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
   statsContainer: {
     flexDirection: isWeb ? 'row' : 'column',
-    gap: 24,
-    maxWidth: 1000,
+    gap: 20,
+    maxWidth: 800,
     width: '100%',
-    marginBottom: 48,
+    marginBottom: 40,
   },
   statCard: {
     flex: 1,
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 32,
+    borderRadius: 14,
+    padding: 28,
     alignItems: 'center',
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
   statNumber: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: '700',
     color: Colors.primary,
-    marginBottom: 8,
+    marginBottom: 6,
+    lineHeight: 48,
   },
   statLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.mediumGray,
     textAlign: 'center',
+    lineHeight: 20,
   },
   testimonialsContainer: {
     flexDirection: isWeb ? 'row' : 'column',
-    gap: 24,
-    maxWidth: 1000,
+    gap: 20,
+    maxWidth: 800,
     width: '100%',
   },
   testimonialCard: {
     flex: 1,
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 32,
+    borderRadius: 14,
+    padding: 24,
     shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
   },
   testimonialAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   testimonialAvatarText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.white,
   },
   testimonialText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.navy,
-    lineHeight: 24,
-    marginBottom: 16,
+    lineHeight: 21,
+    marginBottom: 12,
   },
   testimonialAuthor: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.mediumGray,
     fontWeight: '500',
   },
   footer: {
     backgroundColor: Colors.navy,
-    paddingVertical: 48,
+    paddingVertical: 40,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
   footerLogo: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.white,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   footerText: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.lightGray,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   footerLinks: {
     flexDirection: 'row',
-    gap: 24,
-    marginBottom: 24,
+    gap: 20,
+    marginBottom: 20,
   },
   footerLink: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.primary,
     fontWeight: '500',
   },
   copyright: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.mediumGray,
   },
 });
