@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { getUserProfile } from '@/utils/storage';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
 import * as SplashScreen from 'expo-splash-screen';
+import LandingPage from './landing';
 
 export default function Index() {
   const { user, loading: authLoading } = useAuth();
@@ -38,7 +39,12 @@ export default function Index() {
     );
   }
 
-  // If not authenticated, redirect to signup (first-time users)
+  // If not authenticated and on web, show landing page
+  if (!user && Platform.OS === 'web') {
+    return <LandingPage />;
+  }
+
+  // If not authenticated on mobile, redirect to signup (first-time users)
   if (!user) {
     return <Redirect href="/auth/signup" />;
   }
